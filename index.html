@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUSH OUT BATTLE</title>
+<meta name="theme-color" content="#0a0a1a">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{background:#080a14;color:white;max-width:480px;margin:auto}
+.header{padding:15px;background:linear-gradient(90deg,#0a1430,#1a0f00);display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #ff8c00}
+.header h1{font-size:22px} .blue{color:#00aaff} .orange{color:#ff8c00}
+.live-section{margin:15px;background:#10142a;border-radius:20px;overflow:hidden;border:1px solid #333}
+.live-top{display:flex;justify-content:space-between;padding:10px 15px}
+.live-top b{color:#ff3b30} .watching{color:#ff8c00;font-size:14px}
+video{width:100%;height:240px;background:black;object-fit:cover}
+.match-info{padding:12px}
+.match-info input{background:#1a2040;border:1px solid #00aaff;color:white;padding:8px;border-radius:8px;width:45%;margin:5px 2%}
+.score-display{text-align:center;padding:15px;font-size:50px;font-weight:bold}
+.score-display span{margin:0 20px}
+.controls{display:flex;gap:10px;padding:0 15px 15px}
+.controls button{flex:1;padding:12px;border-radius:25px;border:none;font-weight:bold;cursor:pointer}
+.btn-blue{background:#00aaff;color:white} .btn-orange{background:#ff8c00;color:white}
+.chat-box{margin:15px;background:#10142a;border-radius:15px;padding:10px}
+.chat-msgs{max-height:220px;overflow-y:auto;margin-bottom:10px}
+.msg{padding:6px 10px;background:#1a2040;border-radius:12px;margin:6px 0;font-size:14px}
+.chat-input{display:flex;gap:8px}
+.chat-input input{flex:1;padding:12px;border-radius:20px;border:none;background:#1a2040;color:white}
+.chat-input button{padding:12px 16px;border-radius:20px;border:none;background:#ff3b30;color:white;font-weight:bold}
+.big-live{width:94%;margin:15px 3%;padding:18px;background:linear-gradient(90deg,#ff3b30,#ff1744);border:none;border-radius:30px;color:white;font-size:18px;font-weight:bold}
+.nav{display:flex;justify-content:space-around;padding:12px;background:#10142a;position:sticky;bottom:0}
+</style>
+</head>
+<body>
+
+<div class="header">
+<h1><span class="blue">PUSH OUT</span> <span class="orange">BATTLE</span></h1>
+<div>🔔 ⚙️</div>
+</div>
+
+<div class="live-section">
+<div class="live-top"><b>🔴 LIVE NOW</b><span class="watching" id="watchCount">0 watching</span></div>
+<video id="camera" autoplay muted playsinline></video>
+<div class="match-info">
+<input id="imePlavi" placeholder="Plavi - npr. MARKO" value="MARKO">
+<input id="imeNarancasti" placeholder="Narančasti - npr. IVAN" value="IVAN">
+<div class="score-display">
+<span id="bodPlavi" style="color:#00aaff">0</span>:<span id="bodNar" style="color:#ff8c00">0</span>
+</div>
+<div class="controls">
+<button class="btn-blue" onclick="dodajBod('plavi')">+1 PLAVI</button>
+<button class="btn-orange" onclick="dodajBod('narancasti')">+1 NARANČASTI</button>
+</div>
+</div>
+</div>
+
+<button class="big-live" onclick="pokreniLive()">📷 LIVE • START RECORDING</button>
+
+<div class="chat-box">
+<div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>LIVE CHAT</b><span id="chatBroj">3</span></div>
+<div class="chat-msgs" id="chat">
+<div class="msg"><b>mare_22:</b> Ajmo plavi! 💪</div>
+<div class="msg"><b>kraljKruga:</b> GURAJ!! 🔥🔥</div>
+<div class="msg"><b>arenaFan:</b> Kralj kruga! nevjerojatno</div>
+</div>
+<div class="chat-input">
+<input id="komentar" placeholder="Napiši komentar..." onkeypress="if(event.key==='Enter')posalji()">
+<button onclick="posalji()">➤</button>
+</div>
+</div>
+
+<div class="nav"><span>🏠 Home</span><span>⚔️ Battles</span><span>🏆 Leaderboard</span><span>👤 Profile</span></div>
+
+<script>
+let plavi=0, nar=0;
+async function pokreniLive(){
+  try{
+    let s = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    document.getElementById('camera').srcObject = s;
+    document.getElementById('watchCount').innerText = (Math.floor(Math.random()*40)+5) + ' watching';
+    document.getElementById('chat').innerHTML += `<div class="msg" style="background:#330000"><b>SISTEM:</b> Live počeo! ${imePlavi.value} vs ${imeNarancasti.value}</div>`;
+  }catch(e){ alert('Moraš dozvoliti kameru'); }
+}
+function dodajBod(tim){
+  if(tim==='plavi') plavi++; else nar++;
+  document.getElementById('bodPlavi').innerText = plavi;
+  document.getElementById('bodNar').innerText = nar;
+  let ime = tim==='plavi' ? document.getElementById('imePlavi').value : document.getElementById('imeNarancasti').value;
+  document.getElementById('chat').innerHTML += `<div class="msg" style="border-left:3px solid #ff8c00"><b>REZULTAT:</b> ${plavi}:${nar} - Poen za ${ime}!</div>`;
+}
+function posalji(){
+  let inp = document.getElementById('komentar');
+  if(!inp.value) return;
+  document.getElementById('chat').innerHTML += `<div class="msg"><b>Ti:</b> ${inp.value}</div>`;
+  inp.value='';
+  document.getElementById('chat').scrollTop = 9999;
+  document.getElementById('chatBroj').innerText = parseInt(document.getElementById('chatBroj').innerText)+1;
+}
+</script>
+</body>
+  </html>
