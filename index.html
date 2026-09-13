@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>PUSH OUT BATTLE - ULTIMATE LIVE</title>
 
-<!-- PeerJS (Video) -->
+<!-- PeerJS (Video & Audio) -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <!-- Firebase (Podaci uživo) -->
@@ -79,7 +79,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 
 <div class="box">
 <div class="tag t1" id="statusTag">🔴 UŽIVO</div>
-<div class="tag t2" id="viewerCount">👁️ 0 GLEDATELJA</div>
+<div class="tag t2" id="viewerCount">👁️ 0 ONLINE</div>
 <div id="emojiLayer"></div>
 <video id="cam" autoplay playsinline></video>
 </div>
@@ -115,7 +115,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 </div>
 
 <div id="viewerPanel" style="display:none">
-<button class="main playBtn" id="startBtn" onclick="connectToStream()">▶ PRITISNI ZA GLEDANJE UŽIVO</button>
+<button class="main playBtn" id="startBtn" onclick="connectToStream()">🔊 PRITISNI ZA UČITAVANJE SLIKE I ZVUKA</button>
 </div>
 
 <div class="history">
@@ -178,13 +178,17 @@ function openApp(){
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     document.getElementById('matchLabel').textContent = (isAdmin ? "KOD SOBE: " : "GLEDAŠ SOBU: ") + roomId;
-    if(!isAdmin){
+    
+    let videoElem = document.getElementById('cam');
+    if(isAdmin){
+        videoElem.muted = true; // Admin sebi utiša kameru da nema jeke
+    } else {
         document.getElementById('adminPanel').style.display = 'none';
         document.getElementById('viewerPanel').style.display = 'block';
+        videoElem.muted = false; // Gledatelju je zvuk prisilno uključen
     }
 }
 
-// Brojanje spojenih korisnika uživo
 function trackPresence(){
     const myPresenceRef = db.ref('rooms/' + roomId + '/presence').push();
     const connectedRef = db.ref('.info/connected');
@@ -285,15 +289,22 @@ async function goLive(){
     try {
         localStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: currentFacingMode }, 
-            audio: true
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
         });
-        document.getElementById('cam').srcObject = localStream;
+        
+        let videoElem = document.getElementById('cam');
+        videoElem.srcObject = localStream;
+        videoElem.muted = true; // Sprečava jeku kod admina
         
         peer = new Peer(roomId, peerConfig);
         peer.on('open', () => document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO');
         peer.on('call', (call) => call.answer(localStream));
 
-    } catch(e) { alert('Dozvoli pristup kameri/mikrofonu.'); }
+    } catch(e) { alert('Dozvoli pristup kameri i mikrofonu.'); }
 }
 
 async function switchCamera(){
@@ -316,10 +327,13 @@ function connectToStream(){
         call.on('stream', (remoteStream) => {
             let videoElem = document.getElementById('cam');
             videoElem.srcObject = remoteStream;
+            videoElem.muted = false; // Prisilno omogućavamo zvuk gledatelju
+            videoElem.volume = 1.0;
+            
             videoElem.play().then(() => {
                 btn.style.display = 'none';
             }).catch(() => {
-                btn.textContent = '▶ KLIKNI OPET ZA REPRODUKCIJU';
+                btn.textContent = '▶ KLIKNI ZA REPRODUKCIJU ZVUKA';
             });
         });
 
