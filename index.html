@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>PUSH OUT BATTLE - LIVE</title>
+<title>PUSH OUT BATTLE - ULTIMATE LIVE</title>
 
-<!-- PeerJS (za video prijenos) -->
+<!-- PeerJS (Video) -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
-<!-- Firebase (za bodove uživo) -->
+<!-- Firebase (Podaci uživo) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,system-ui}
-body{background:#080a14;color:#fff;max-width:480px;margin:auto;min-height:100vh}
+body{background:#080a14;color:#fff;max-width:480px;margin:auto;min-height:100vh;padding-bottom:20px}
 #login{position:fixed;inset:0;background:#080a14;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
 #login h1{font-size:38px;font-weight:900;line-height:.9;text-align:center}
 .blue{color:#1a84ff}.orange{color:#ff8c00}
@@ -27,20 +27,40 @@ body{background:#080a14;color:#fff;max-width:480px;margin:auto;min-height:100vh}
 #app{display:none}
 .top{text-align:center;padding:14px 14px 0}
 .top h1{font-size:26px;font-weight:900}
+
 .box{margin:14px;background:#000;border-radius:22px;overflow:hidden;position:relative;height:250px;border:1px solid #222}
 .tag{position:absolute;top:12px;padding:6px 12px;border-radius:99px;font-size:12px;font-weight:900;z-index:2}
 .t1{left:12px;background:#ff2a2a;color:#fff}
+.t2{right:12px;background:rgba(0,0,0,0.7);color:#fff;border:1px solid rgba(255,255,255,0.2)}
 video{width:100%;height:100%;object-fit:cover;background:#111}
+
+#emojiLayer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:10}
+.floating-emoji{position:absolute;bottom:0;font-size:32px;animation:floatUp 2s linear forwards}
+@keyframes floatUp{0%{transform:translateY(0) scale(0.8);opacity:1}100%{transform:translateY(-220px) scale(1.4);opacity:0}}
+
 .scoreWrap{margin:14px;background:#131632;border-radius:18px;padding:16px;text-align:center;border:1px solid #1f234a}
-.score{font-size:64px;font-weight:900;margin-top:4px}
-.btns{display:flex;gap:10px;padding:0 14px 14px}
-.btns button{flex:1;padding:16px;border:none;border-radius:14px;font-weight:900;font-size:14px;cursor:pointer}
-.bB{background:#1a84ff;color:#fff}.bO{background:#ff7a00;color:#fff}
-.main{width:calc(100% - 28px);margin:0 14px 10px;padding:16px;border:none;border-radius:14px;font-weight:900;font-size:15px;display:flex;justify-content:center;cursor:pointer}
-.live{background:#ff2d2d;color:#fff}.wa{background:#0cc144;color:#fff}
-.playBtn{background:#1a84ff;color:#fff;animation:pulse 1.5s infinite}
+.names{display:flex;justify-content:space-between;font-weight:900;font-size:16px;margin-bottom:6px}
+.score{font-size:58px;font-weight:900;line-height:1}
+
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 10px}
+.btns button{padding:12px;border:none;border-radius:12px;font-weight:900;font-size:13px;cursor:pointer;color:#fff}
+.bB{background:#1a84ff}.bO{background:#ff7a00}.bBMinus{background:#0d47a1}.bOMinus{background:#b75300}
+
+.main{width:calc(100% - 28px);margin:0 14px 8px;padding:14px;border:none;border-radius:14px;font-weight:900;font-size:14px;display:flex;justify-content:center;align-items:center;gap:6px;cursor:pointer;color:#fff}
+.live{background:#ff2d2d}.wa{background:#0cc144}.reset{background:#e53e3e}.sec{background:#2a2f66}
+.playBtn{background:#1a84ff;animation:pulse 1.5s infinite}
 @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
-.viewLocked{background:#2d3748;color:#fff;width:calc(100% - 28px);margin:12px 14px;padding:16px;border-radius:14px;font-weight:900;text-align:center}
+
+.reactions{display:flex;justify-content:space-around;padding:10px 14px;background:#131632;margin:10px 14px;border-radius:14px;border:1px solid #1f234a}
+.reactions button{background:transparent;border:none;font-size:26px;cursor:pointer}
+
+.inputsWrap{margin:0 14px 10px;display:flex;gap:8px}
+.inputsWrap input{flex:1;background:#1c203d;border:1px solid #2a2f66;color:#fff;padding:10px;border-radius:10px;text-align:center;font-weight:bold;outline:none}
+
+.history{margin:10px 14px;background:#131632;border-radius:14px;padding:12px;font-size:13px;border:1px solid #1f234a}
+.history h3{font-size:12px;color:#888;margin-bottom:6px;text-transform:uppercase}
+.history ul{list-style:none;max-height:80px;overflow-y:auto}
+.history li{padding:4px 0;border-bottom:1px solid #1c203d;display:flex;justify-content:space-between}
 </style>
 </head>
 <body>
@@ -58,24 +78,49 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 <div class="top"><h1><span class="blue">PUSH OUT</span> <span class="orange">BATTLE</span></h1></div>
 
 <div class="box">
-<div class="tag t1">🔴 UŽIVO</div>
-<video id="cam" autoplay muted playsinline></video>
+<div class="tag t1" id="statusTag">🔴 UŽIVO</div>
+<div class="tag t2" id="viewerCount">👁️ 0 GLEDATELJA</div>
+<div id="emojiLayer"></div>
+<video id="cam" autoplay playsinline></video>
 </div>
 
 <div class="scoreWrap">
-<small id="matchLabel">BORBA U TIJEKU</small>
+<div class="names"><span class="blue" id="p1Name">PLAVI</span><span class="orange" id="p2Name">NARANČASTI</span></div>
 <div class="score"><span id="s1">0</span> : <span id="s2">0</span></div>
+<small id="matchLabel" style="color:#888;font-size:11px;margin-top:6px;display:block">BORBA U TIJEKU</small>
+</div>
+
+<div class="reactions">
+<button onclick="sendReaction('🔥')">🔥</button>
+<button onclick="sendReaction('👏')">👏</button>
+<button onclick="sendReaction('😮')">😮</button>
+<button onclick="sendReaction('💪')">💪</button>
 </div>
 
 <div id="adminPanel">
-<div class="btns"><button class="bB" onclick="add('p')">+1 PLAVI</button><button class="bO" onclick="add('n')">+1 NARANČASTI</button></div>
+<div class="inputsWrap">
+<input id="name1" placeholder="Ime Plavog" oninput="updateNames()">
+<input id="name2" placeholder="Ime Narančastog" oninput="updateNames()">
+</div>
+<div class="btns">
+<button class="bB" onclick="add('p', 1)">+1 PLAVI</button>
+<button class="bO" onclick="add('n', 1)">+1 NARANČASTI</button>
+<button class="bBMinus" onclick="add('p', -1)">-1 PLAVI</button>
+<button class="bOMinus" onclick="add('n', -1)">-1 NARANČASTI</button>
+</div>
+<button class="main reset" onclick="resetMatch()">🔄 NOVA BORBA (RESET)</button>
 <button class="main live" id="lb" onclick="goLive()">📡 POKRENI KAMERU I SOBU</button>
+<button class="main sec" onclick="switchCamera()">🔄 PROMIJENI KAMERU</button>
 <button class="main wa" onclick="share()">💬 PODIJELE PRIVATNI LINK NA WA</button>
 </div>
 
 <div id="viewerPanel" style="display:none">
 <button class="main playBtn" id="startBtn" onclick="connectToStream()">▶ PRITISNI ZA GLEDANJE UŽIVO</button>
-<div class="viewLocked">👁 PRIVATNI GLEDALAC MOD</div>
+</div>
+
+<div class="history">
+<h3>POVIJEST POBJEDA (TRENUTNI TURNIR)</h3>
+<ul id="historyList"></ul>
 </div>
 
 </div>
@@ -97,8 +142,8 @@ const db = firebase.database();
 
 let b=0, o=0, isAdmin=false;
 let peer = null, localStream = null, roomId = "";
+let currentFacingMode = "environment";
 
-// Konfiguracija sa besplatnim Google STUN poslužiteljima za lakše probijanje mreža
 const peerConfig = {
     config: {
         'iceServers': [
@@ -117,11 +162,13 @@ function go(){
         roomId = "POB-" + Math.floor(1000 + Math.random() * 9000);
         openApp();
         listenToScore();
+        trackPresence();
     } else if(raw.startsWith("POB-")){
         isAdmin = false;
         roomId = raw;
         openApp();
         listenToScore();
+        trackPresence();
     } else {
         document.getElementById('err').style.display = 'block';
     }
@@ -137,44 +184,123 @@ function openApp(){
     }
 }
 
-function add(t){
+// Brojanje spojenih korisnika uživo
+function trackPresence(){
+    const myPresenceRef = db.ref('rooms/' + roomId + '/presence').push();
+    const connectedRef = db.ref('.info/connected');
+
+    connectedRef.on('value', (snap) => {
+        if (snap.val() === true) {
+            myPresenceRef.onDisconnect().remove();
+            myPresenceRef.set(true);
+        }
+    });
+
+    db.ref('rooms/' + roomId + '/presence').on('value', (snap) => {
+        let count = snap.numChildren();
+        document.getElementById('viewerCount').textContent = `👁️ ${count} ONLINE`;
+    });
+}
+
+function add(t, val){
     if(!isAdmin) return;
-    if(t === 'p') b++; else o++;
-    db.ref('rooms/' + roomId).set({ blue: b, orange: o });
+    if(t === 'p') b = Math.max(0, b + val); 
+    else o = Math.max(0, o + val);
+    pushData();
+}
+
+function updateNames(){
+    if(!isAdmin) return;
+    pushData();
+}
+
+function resetMatch(){
+    if(!isAdmin) return;
+    let p1 = document.getElementById('name1').value || 'Plavi';
+    let p2 = document.getElementById('name2').value || 'Narančasti';
+    
+    if(b > o) recordHistory(p1, `${b}:${o}`);
+    else if(o > b) recordHistory(p2, `${o}:${b}`);
+
+    b = 0; o = 0;
+    pushData();
+}
+
+function recordHistory(winner, score){
+    db.ref('rooms/' + roomId + '/history').push({ winner, score });
+}
+
+function pushData(){
+    let p1 = document.getElementById('name1').value || 'PLAVI';
+    let p2 = document.getElementById('name2').value || 'NARANČASTI';
+    db.ref('rooms/' + roomId + '/data').set({ blue: b, orange: o, p1, p2 });
 }
 
 function listenToScore(){
-    db.ref('rooms/' + roomId).on('value', (snapshot) => {
+    db.ref('rooms/' + roomId + '/data').on('value', (snapshot) => {
         let data = snapshot.val();
         if(data){
             b = data.blue || 0;
             o = data.orange || 0;
             document.getElementById('s1').textContent = b;
             document.getElementById('s2').textContent = o;
+            document.getElementById('p1Name').textContent = data.p1 || 'PLAVI';
+            document.getElementById('p2Name').textContent = data.p2 || 'NARANČASTI';
         }
     });
+
+    db.ref('rooms/' + roomId + '/reactions').on('child_added', (snapshot) => {
+        let emoji = snapshot.val();
+        if(emoji) showFloatingEmoji(emoji);
+    });
+
+    db.ref('rooms/' + roomId + '/history').on('value', (snapshot) => {
+        let ul = document.getElementById('historyList');
+        ul.innerHTML = '';
+        snapshot.forEach((child) => {
+            let item = child.val();
+            let li = document.createElement('li');
+            li.innerHTML = `<span>🏆 ${item.winner}</span> <b>${item.score}</b>`;
+            ul.prepend(li);
+        });
+    });
+}
+
+function sendReaction(emoji){
+    db.ref('rooms/' + roomId + '/reactions').push(emoji);
+}
+
+function showFloatingEmoji(emoji){
+    let layer = document.getElementById('emojiLayer');
+    let el = document.createElement('div');
+    el.className = 'floating-emoji';
+    el.textContent = emoji;
+    el.style.left = (20 + Math.random() * 60) + '%';
+    layer.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
 }
 
 async function goLive(){
     if(!isAdmin) return;
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+        localStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: currentFacingMode }, 
+            audio: true
+        });
         document.getElementById('cam').srcObject = localStream;
         
         peer = new Peer(roomId, peerConfig);
-        
-        peer.on('open', () => {
-            document.getElementById('lb').textContent = '🔴 SOBA JE OTVORENA - EMITIRAM';
-        });
+        peer.on('open', () => document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO');
+        peer.on('call', (call) => call.answer(localStream));
 
-        // Odgovori na poziv gledatelja i pošalji mu video stream
-        peer.on('call', (call) => {
-            call.answer(localStream);
-        });
+    } catch(e) { alert('Dozvoli pristup kameri/mikrofonu.'); }
+}
 
-    } catch(e) { 
-        alert('Dozvoli pristup kameri.'); 
-    }
+async function switchCamera(){
+    if(!isAdmin || !localStream) return;
+    localStream.getTracks().forEach(track => track.stop());
+    currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+    await goLive();
 }
 
 function connectToStream(){
@@ -182,30 +308,24 @@ function connectToStream(){
     btn.textContent = '⌛ SPAJANJE NA PRIJENOS...';
 
     peer = new Peer(peerConfig);
-    
     peer.on('open', () => {
-        // Stvori prazan audio/video stream kako bi preglednik poslao poziv
         let canvas = document.createElement('canvas');
         let emptyStream = canvas.captureStream();
-
         let call = peer.call(roomId, emptyStream);
         
         call.on('stream', (remoteStream) => {
             let videoElem = document.getElementById('cam');
             videoElem.srcObject = remoteStream;
-            videoElem.muted = false; // Zvuk za gledatelja
-            
-            // Pokreni video nakon klika
             videoElem.play().then(() => {
-                btn.style.display = 'none'; // Sakrij gumb kad video krene
-            }).catch(err => {
+                btn.style.display = 'none';
+            }).catch(() => {
                 btn.textContent = '▶ KLIKNI OPET ZA REPRODUKCIJU';
             });
         });
 
         setTimeout(() => {
             if(btn.style.display !== 'none') {
-                btn.textContent = '❌ REFRESHAJ I PROBAJ OPET (ADMIN NIJE LIVE)';
+                btn.textContent = '❌ REFRESHAJ (ADMIN NIJE LIVE)';
             }
         }, 8000);
     });
