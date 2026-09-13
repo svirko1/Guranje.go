@@ -38,6 +38,8 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 .bB{background:#1a84ff;color:#fff}.bO{background:#ff7a00;color:#fff}
 .main{width:calc(100% - 28px);margin:0 14px 10px;padding:16px;border:none;border-radius:14px;font-weight:900;font-size:15px;display:flex;justify-content:center;cursor:pointer}
 .live{background:#ff2d2d;color:#fff}.wa{background:#0cc144;color:#fff}
+.playBtn{background:#1a84ff;color:#fff;animation:pulse 1.5s infinite}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
 .viewLocked{background:#2d3748;color:#fff;width:calc(100% - 28px);margin:12px 14px;padding:16px;border-radius:14px;font-weight:900;text-align:center}
 </style>
 </head>
@@ -72,13 +74,13 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 </div>
 
 <div id="viewerPanel" style="display:none">
+<button class="main playBtn" id="startBtn" onclick="connectToStream()">▶ PRITISNI ZA GLEDANJE UŽIVO</button>
 <div class="viewLocked">👁 PRIVATNI GLEDALAC MOD</div>
 </div>
 
 </div>
 
 <script>
-// Vaši Firebase podaci
 const firebaseConfig = {
   apiKey: "AIzaSyBYK9bSu3siIn2Gi7uzRGp5YLPf1eIYtak",
   authDomain: "push-out-battle-e91df.firebaseapp.com",
@@ -96,20 +98,29 @@ const db = firebase.database();
 let b=0, o=0, isAdmin=false;
 let peer = null, localStream = null, roomId = "";
 
+// Konfiguracija sa besplatnim Google STUN poslužiteljima za lakše probijanje mreža
+const peerConfig = {
+    config: {
+        'iceServers': [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+    }
+};
+
 function go(){
     let raw = document.getElementById('pass').value.trim();
     document.getElementById('err').style.display = 'none';
 
-    if(raw === "112255"){ // Admin šifra
+    if(raw === "112255"){
         isAdmin = true;
         roomId = "POB-" + Math.floor(1000 + Math.random() * 9000);
         openApp();
         listenToScore();
-    } else if(raw.startsWith("POB-")){ // Kod sobe za gledatelje
+    } else if(raw.startsWith("POB-")){
         isAdmin = false;
         roomId = raw;
         openApp();
-        connectToStream(roomId);
         listenToScore();
     } else {
         document.getElementById('err').style.display = 'block';
@@ -149,21 +160,54 @@ async function goLive(){
     try {
         localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
         document.getElementById('cam').srcObject = localStream;
-        peer = new Peer(roomId);
-        peer.on('open', () => document.getElementById('lb').textContent = '🔴 SOBA JE OTVORENA');
-        peer.on('call', (call) => call.answer(localStream));
-    } catch(e) { alert('Dozvoli pristup kameri.'); }
+        
+        peer = new Peer(roomId, peerConfig);
+        
+        peer.on('open', () => {
+            document.getElementById('lb').textContent = '🔴 SOBA JE OTVORENA - EMITIRAM';
+        });
+
+        // Odgovori na poziv gledatelja i pošalji mu video stream
+        peer.on('call', (call) => {
+            call.answer(localStream);
+        });
+
+    } catch(e) { 
+        alert('Dozvoli pristup kameri.'); 
+    }
 }
 
-function connectToStream(targetRoom){
-    peer = new Peer();
+function connectToStream(){
+    let btn = document.getElementById('startBtn');
+    btn.textContent = '⌛ SPAJANJE NA PRIJENOS...';
+
+    peer = new Peer(peerConfig);
+    
     peer.on('open', () => {
-        let call = peer.call(targetRoom, null);
+        // Stvori prazan audio/video stream kako bi preglednik poslao poziv
+        let canvas = document.createElement('canvas');
+        let emptyStream = canvas.captureStream();
+
+        let call = peer.call(roomId, emptyStream);
+        
         call.on('stream', (remoteStream) => {
             let videoElem = document.getElementById('cam');
             videoElem.srcObject = remoteStream;
-            videoElem.muted = false;
+            videoElem.muted = false; // Zvuk za gledatelja
+            
+            // Pokreni video nakon klika
+            videoElem.play().then(() => {
+                btn.style.display = 'none'; // Sakrij gumb kad video krene
+            }).catch(err => {
+                btn.textContent = '▶ KLIKNI OPET ZA REPRODUKCIJU';
+            });
         });
+
+        setTimeout(() => {
+            if(btn.style.display !== 'none') {
+                btn.textContent = '❌ REFRESHAJ I PROBAJ OPET (ADMIN NIJE LIVE)';
+            }
+        }, 8000);
     });
 }
 
