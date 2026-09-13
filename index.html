@@ -3,18 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>PUSH OUT BATTLE - PRIVATNO</title>
-<!-- PeerJS biblioteka za besplatan prijenos videa -->
+<title>PUSH OUT BATTLE - LIVE</title>
+
+<!-- PeerJS (za video prijenos) -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+<!-- Firebase (za bodove uživo) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,system-ui}
 body{background:#080a14;color:#fff;max-width:480px;margin:auto;min-height:100vh}
 #login{position:fixed;inset:0;background:#080a14;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
-#login h1{font-size:40px;font-weight:900;line-height:.9;text-align:center}
+#login h1{font-size:38px;font-weight:900;line-height:.9;text-align:center}
 .blue{color:#1a84ff}.orange{color:#ff8c00}
 .badge{margin-top:14px;background:#e53e3e;color:#fff;padding:8px 18px;border-radius:99px;font-weight:900;font-size:13px}
-#login h2{margin-top:30px;font-size:18px;letter-spacing:.5px}
-.inp{margin-top:15px;width:100%;background:#1c203d;border:1px solid #2a2f66;border-radius:18px;display:flex;align-items:center;padding:0 16px}
+#login h2{margin-top:30px;font-size:18px}
+.inp{margin-top:15px;width:100%;background:#1c203d;border:1px solid #2a2f66;border-radius:18px;display:flex;padding:0 16px}
 .inp input{flex:1;background:transparent;border:none;color:#fff;padding:16px 10px;font-size:16px;outline:none;text-align:center}
 .btnLogin{margin-top:15px;width:100%;background:#0cc144;border:none;color:#fff;padding:16px;border-radius:18px;font-weight:900;font-size:20px;cursor:pointer}
 #err{color:#ff4444;font-size:13px;margin-top:10px;display:none;text-align:center}
@@ -24,15 +30,13 @@ body{background:#080a14;color:#fff;max-width:480px;margin:auto;min-height:100vh}
 .box{margin:14px;background:#000;border-radius:22px;overflow:hidden;position:relative;height:250px;border:1px solid #222}
 .tag{position:absolute;top:12px;padding:6px 12px;border-radius:99px;font-size:12px;font-weight:900;z-index:2}
 .t1{left:12px;background:#ff2a2a;color:#fff}
-.t2{right:12px;background:#000c;border:1px solid #333}
 video{width:100%;height:100%;object-fit:cover;background:#111}
 .scoreWrap{margin:14px;background:#131632;border-radius:18px;padding:16px;text-align:center;border:1px solid #1f234a}
-.scoreWrap small{opacity:.5;font-size:12px;letter-spacing:1px}
 .score{font-size:64px;font-weight:900;margin-top:4px}
 .btns{display:flex;gap:10px;padding:0 14px 14px}
 .btns button{flex:1;padding:16px;border:none;border-radius:14px;font-weight:900;font-size:14px;cursor:pointer}
 .bB{background:#1a84ff;color:#fff}.bO{background:#ff7a00;color:#fff}
-.main{width:calc(100% - 28px);margin:0 14px 10px;padding:16px;border:none;border-radius:14px;font-weight:900;font-size:15px;display:flex;justify-content:center;align-items:center;gap:8px;cursor:pointer}
+.main{width:calc(100% - 28px);margin:0 14px 10px;padding:16px;border:none;border-radius:14px;font-weight:900;font-size:15px;display:flex;justify-content:center;cursor:pointer}
 .live{background:#ff2d2d;color:#fff}.wa{background:#0cc144;color:#fff}
 .viewLocked{background:#2d3748;color:#fff;width:calc(100% - 28px);margin:12px 14px;padding:16px;border-radius:14px;font-weight:900;text-align:center}
 </style>
@@ -52,8 +56,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 <div class="top"><h1><span class="blue">PUSH OUT</span> <span class="orange">BATTLE</span></h1></div>
 
 <div class="box">
-<div class="tag t1" id="statusTag">🔴 UŽIVO</div>
-<div class="tag t2" id="wt">👁 0 gledatelja</div>
+<div class="tag t1">🔴 UŽIVO</div>
 <video id="cam" autoplay muted playsinline></video>
 </div>
 
@@ -65,7 +68,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 <div id="adminPanel">
 <div class="btns"><button class="bB" onclick="add('p')">+1 PLAVI</button><button class="bO" onclick="add('n')">+1 NARANČASTI</button></div>
 <button class="main live" id="lb" onclick="goLive()">📡 POKRENI KAMERU I SOBU</button>
-<button class="main wa" onclick="share()">🔒 PODIJELE PRIVATNI LINK NA WA</button>
+<button class="main wa" onclick="share()">💬 PODIJELE PRIVATNI LINK NA WA</button>
 </div>
 
 <div id="viewerPanel" style="display:none">
@@ -75,9 +78,23 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 </div>
 
 <script>
+// Vaši Firebase podaci
+const firebaseConfig = {
+  apiKey: "AIzaSyBYK9bSu3siIn2Gi7uzRGp5YLPf1eIYtak",
+  authDomain: "push-out-battle-e91df.firebaseapp.com",
+  databaseURL: "https://push-out-battle-e91df-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "push-out-battle-e91df",
+  storageBucket: "push-out-battle-e91df.firebasestorage.app",
+  messagingSenderId: "968098603133",
+  appId: "1:968098603133:web:afb5f09183b9c23d2f1114",
+  measurementId: "G-XT8XGLXBKV"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 let b=0, o=0, isAdmin=false;
-let peer = null, localStream = null;
-let roomId = "";
+let peer = null, localStream = null, roomId = "";
 
 function go(){
     let raw = document.getElementById('pass').value.trim();
@@ -85,13 +102,15 @@ function go(){
 
     if(raw === "112255"){ // Admin šifra
         isAdmin = true;
-        roomId = "POB-" + Math.floor(1000 + Math.random() * 9000); // Generira unikatnu sobu
+        roomId = "POB-" + Math.floor(1000 + Math.random() * 9000);
         openApp();
-    } else if(raw.startsWith("POB-")){ // Privatni kod sobe
+        listenToScore();
+    } else if(raw.startsWith("POB-")){ // Kod sobe za gledatelje
         isAdmin = false;
         roomId = raw;
         openApp();
         connectToStream(roomId);
+        listenToScore();
     } else {
         document.getElementById('err').style.display = 'block';
     }
@@ -100,23 +119,29 @@ function go(){
 function openApp(){
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-
-    if(isAdmin){
-        document.getElementById('adminPanel').style.display = 'block';
-        document.getElementById('viewerPanel').style.display = 'none';
-        document.getElementById('matchLabel').textContent = "KOD SOBE: " + roomId;
-    } else {
+    document.getElementById('matchLabel').textContent = (isAdmin ? "KOD SOBE: " : "GLEDAŠ SOBU: ") + roomId;
+    if(!isAdmin){
         document.getElementById('adminPanel').style.display = 'none';
         document.getElementById('viewerPanel').style.display = 'block';
-        document.getElementById('matchLabel').textContent = "GLEDAŠ SOBU: " + roomId;
     }
 }
 
 function add(t){
     if(!isAdmin) return;
     if(t === 'p') b++; else o++;
-    document.getElementById('s1').textContent = b;
-    document.getElementById('s2').textContent = o;
+    db.ref('rooms/' + roomId).set({ blue: b, orange: o });
+}
+
+function listenToScore(){
+    db.ref('rooms/' + roomId).on('value', (snapshot) => {
+        let data = snapshot.val();
+        if(data){
+            b = data.blue || 0;
+            o = data.orange || 0;
+            document.getElementById('s1').textContent = b;
+            document.getElementById('s2').textContent = o;
+        }
+    });
 }
 
 async function goLive(){
@@ -124,20 +149,10 @@ async function goLive(){
     try {
         localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
         document.getElementById('cam').srcObject = localStream;
-        
-        // Pokretanje PeerJS poslužitelja za admina
         peer = new Peer(roomId);
-        peer.on('open', (id) => {
-            document.getElementById('lb').textContent = '🔴 SOBA JE OTVORENA';
-        });
-
-        peer.on('call', (call) => {
-            call.answer(localStream); // Šalje video gledatelju koji se spojio
-        });
-
-    } catch(e) {
-        alert('Dozvoli pristup kameri.');
-    }
+        peer.on('open', () => document.getElementById('lb').textContent = '🔴 SOBA JE OTVORENA');
+        peer.on('call', (call) => call.answer(localStream));
+    } catch(e) { alert('Dozvoli pristup kameri.'); }
 }
 
 function connectToStream(targetRoom){
@@ -147,7 +162,7 @@ function connectToStream(targetRoom){
         call.on('stream', (remoteStream) => {
             let videoElem = document.getElementById('cam');
             videoElem.srcObject = remoteStream;
-            videoElem.muted = false; // Omogućuje ton gledatelju
+            videoElem.muted = false;
         });
     });
 }
@@ -155,11 +170,10 @@ function connectToStream(targetRoom){
 function share(){
     let base = location.href.split('?')[0];
     let link = base + '?room=' + roomId;
-    let txt = `🔒 Pozvan si na privatni PUSH OUT BATTLE!\n\nKod sobe: ${roomId}\nGledaj izravno klikom na link:\n${link}`;
+    let txt = `🔒 Privatni PUSH OUT BATTLE!\nKod sobe: ${roomId}\nGledaj uživo:\n${link}`;
     window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
 }
 
-// Automatski ulazak ako se otvori privatni link
 window.addEventListener('DOMContentLoaded', () => {
     let params = new URLSearchParams(location.search);
     let roomParam = params.get('room');
