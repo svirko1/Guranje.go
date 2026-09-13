@@ -39,249 +39,125 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 </style>
 </head>
 <body>
- 
+
 <div id="login">
-<h1><span class="blue">PUSH OUT</span><br><span class="orange">OUT</span> <span class="blue">BATTLE</span></h1>
+<h1><span class="blue">PUSH OUT</span><br><span class="orange">BATTLE</span></h1>
 <div class="badge">✔ 100% BESPLATNO</div>
 <h2>UNESI ŠIFRU ZA ULAZ</h2>
 <div class="inp"><input id="pass" type="password" placeholder="Upiši šifru" onkeydown="if(event.key==='Enter')go()"></div>
 <button class="btnLogin" onclick="go()">UĐI</button>
 <p id="err">Pogrešna šifra! Probaj opet.</p>
 </div>
- 
+
 <div id="app">
 <div class="top"><h1><span class="blue">PUSH OUT</span> <span class="orange">BATTLE</span></h1></div>
- 
+
 <div class="box">
 <div class="tag t1">🔴 LIVE NOW</div>
 <div class="tag t2" id="wt">👁 0 gleda</div>
 <video id="cam" autoplay muted playsinline></video>
 <div class="tag tView" id="viewMsg">👁 GLEDAŠ • UŽIVO • SAMO GLEDANJE</div>
 </div>
- 
+
 <div class="scoreWrap">
 <small id="matchLabel">BORBA #1 • AUTO</small>
 <div class="score"><span id="s1">0</span> : <span id="s2">0</span></div>
 <div class="infoYellow" id="yellowInfo" style="display:none">ⓘ Samo gledaš - ne možeš mijenjati rezultat</div>
 </div>
- 
+
 <div id="adminPanel">
 <div class="btns"><button class="bB" onclick="add('p')">+1 PLAVI</button><button class="bO" onclick="add('n')">+1 NARANČASTI</button></div>
 <button class="main live" id="lb" onclick="goLive()">📡 POKRENI LIVE AUTOMATSKI</button>
 <button class="main wa" onclick="share()">💬 PODJELI NA WHATSAPP GRUPU</button>
 </div>
- 
+
 <div id="viewerPanel" style="display:none">
 <div class="viewInfo">Samo gledaš - ne možeš mijenjati rezultat</div>
 <div class="viewLocked">👁 GLEDALAC MOD • 1 gledalac</div>
 </div>
- 
+
 </div>
- 
+
 <script>
-let b=0,o=0,br=1,isAdmin=false;
+let b=0, o=0, br=1, isAdmin=false;
+
 function go(){
- let raw=document.getElementById('pass').value.trim();
- let up=raw.toUpperCase();
- if(up==="PUSH OF BATLE" || up==="PUSH OUT BATTLE" || up==="PUSH OF BATTLE"){
-   isAdmin=false; openApp(1);
- }else if(raw==="112255"){
-   isAdmin=true; openApp(0);
- }else{
-   document.getElementById('err').style.display='block';
- }
+    let errElem = document.getElementById('err');
+    let passInput = document.getElementById('pass');
+    
+    if(!passInput) return;
+    
+    errElem.style.display = 'none';
+    let raw = passInput.value.trim();
+    let up = raw.toUpperCase();
+    
+    if(raw === "112255"){
+        isAdmin = true; 
+        openApp();
+    } else if(up === "PUSH OF BATLE" || up === "PUSH OUT BATTLE" || up === "PUSH OF BATTLE"){
+        isAdmin = false; 
+        openApp();
+    } else {
+        errElem.style.display = 'block';
+    }
 }
-function openApp(viewers){
- document.getElementById('login').style.display='none';
- document.getElementById('app').style.display='block';
- if(isAdmin){
-   document.getElementById('adminPanel').style.display='block';
-   document.getElementById('viewerPanel').style.display='none';
-   document.getElementById('wt').textContent='👁 0 gleda';
-   document.getElementById('viewMsg').style.display='none';
-   document.getElementById('yellowInfo').style.display='none';
- }else{
-   document.getElementById('adminPanel').style.display='none';
-   document.getElementById('viewerPanel').style.display='block';
-   document.getElementById('wt').textContent='👁 1 gleda';
-   document.getElementById('viewMsg').style.display='block';
-   document.getElementById('yellowInfo').style.display='block';
- }
+
+function openApp(){
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    
+    if(isAdmin){
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('viewerPanel').style.display = 'none';
+        document.getElementById('wt').textContent = '👁 0 gleda';
+        document.getElementById('viewMsg').style.display = 'none';
+        document.getElementById('yellowInfo').style.display = 'none';
+    } else {
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('viewerPanel').style.display = 'block';
+        document.getElementById('wt').textContent = '👁 1 gleda';
+        document.getElementById('viewMsg').style.display = 'block';
+        document.getElementById('yellowInfo').style.display = 'block';
+    }
 }
+
 function add(t){
- if(!isAdmin)return;
- if(t==='p')b++; else o++;
- document.getElementById('s1').textContent=b;
- document.getElementById('s2').textContent=o;
+    if(!isAdmin) return;
+    if(t === 'p') b++; else o++;
+    document.getElementById('s1').textContent = b;
+    document.getElementById('s2').textContent = o;
 }
+
 async function goLive(){
- if(!isAdmin)return;
- try{
-  let s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-  document.getElementById('cam').srcObject=s;
-  br++;
-  document.getElementById('matchLabel').textContent=`BORBA #${br} • AUTO`;
-  b=0;o=0;
-  document.getElementById('s1').textContent=0;
-  document.getElementById('s2').textContent=0;
-  document.getElementById('lb').textContent='🔴 UŽIVO - SNIMA SE';
- }catch(e){alert('Dozvoli kameru u browseru')}
+    if(!isAdmin) return;
+    try {
+        let s = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+        document.getElementById('cam').srcObject = s;
+        br++;
+        document.getElementById('matchLabel').textContent = `BORBA #${br} • AUTO`;
+        b = 0; o = 0;
+        document.getElementById('s1').textContent = 0;
+        document.getElementById('s2').textContent = 0;
+        document.getElementById('lb').textContent = '🔴 UŽIVO - SNIMA SE';
+    } catch(e) {
+        alert('Dozvoli kameru u browseru');
+    }
 }
+
 function share(){
- let base=location.href.split('?')[0];
- let link=base+'?view=1';
- let txt=`🔥 PUSH OUT BATTLE LIVE!\nBORBA #${br} - ${b}:${o}\nGledaj uživo: ${link}\nŠifra: PUSH OF BATLE`;
- window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+    let base = location.href.split('?')[0];
+    let link = base + '?view=1';
+    let txt = `🔥 PUSH OUT BATTLE LIVE!\nBORBA #${br} - ${b}:${o}\nGledaj uživo: ${link}\nŠifra: PUSH OUT BATTLE`;
+    window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
 }
-// Auto ulaz ako je ?view=1
-let params=new URLSearchParams(location.search);
-if(params.get('view')==='1'){
- document.getElementById('pass').value='PUSH OF BATLE';
- go();
-}
-</script>
-</body>
-</html><!DOCTYPE html>
-<html lang="hr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>PUSH OUT BATTLE</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,system-ui}
-body{background:#080a14;color:#fff;max-width:480px;margin:auto;min-height:100vh}
-#login{position:fixed;inset:0;background:#080a14;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
-#login h1{font-size:44px;font-weight:900;line-height:.9;text-align:center}
-.blue{color:#1a84ff}.orange{color:#ff8c00}
-.badge{margin-top:14px;background:#00c853;color:#fff;padding:8px 18px;border-radius:99px;font-weight:900;font-size:13px}
-#login h2{margin-top:36px;font-size:21px;letter-spacing:.5px}
-.inp{margin-top:20px;width:100%;background:#1c203d;border:1px solid #2a2f66;border-radius:18px;display:flex;align-items:center;padding:0 16px}
-.inp input{flex:1;background:transparent;border:none;color:#fff;padding:18px 10px;font-size:17px;outline:none;text-align:center}
-.btnLogin{margin-top:20px;width:100%;background:#0cc144;border:none;color:#fff;padding:18px;border-radius:18px;font-weight:900;font-size:22px;letter-spacing:1px;cursor:pointer}
-#err{color:#ff4444;font-size:12px;margin-top:10px;display:none}
-#app{display:none}
-.top{text-align:center;padding:14px 14px 0}
-.top h1{font-size:30px;font-weight:900}
-.box{margin:14px;background:#000;border-radius:22px;overflow:hidden;position:relative;height:250px;border:1px solid #222}
-.tag{position:absolute;top:12px;padding:6px 12px;border-radius:99px;font-size:12px;font-weight:900;z-index:2}
-.t1{left:12px;background:#ff2a2a;color:#fff}
-.t2{right:12px;background:#000c;border:1px solid #333}
-.tView{left:50%;top:50%;transform:translate(-50%,-50%);background:#000d;border:1px solid #333;padding:10px 18px;border-radius:12px;font-size:13px;white-space:nowrap;display:none}
-video{width:100%;height:100%;object-fit:cover;background:#111}
-.scoreWrap{margin:14px;background:#131632;border-radius:18px;padding:16px;text-align:center;border:1px solid #1f234a}
-.scoreWrap small{opacity:.5;font-size:12px;letter-spacing:1px}
-.score{font-size:64px;font-weight:900;margin-top:4px}
-.infoYellow{margin-top:12px;background:#c9be7a;color:#000;padding:10px;border-radius:10px;font-size:13px;font-weight:700}
-.btns{display:flex;gap:10px;padding:0 14px 14px}
-.btns button{flex:1;padding:16px;border:none;border-radius:14px;font-weight:900;font-size:14px;cursor:pointer}
-.bB{background:#1a84ff;color:#fff}.bO{background:#ff7a00;color:#fff}
-.main{width:calc(100% - 28px);margin:0 14px 10px;padding:16px;border:none;border-radius:14px;font-weight:900;font-size:15px;display:flex;justify-content:center;align-items:center;gap:8px;cursor:pointer}
-.live{background:#ff2d2d;color:#fff}.wa{background:#0cc144;color:#fff}
-.viewLocked{background:#6b7280;color:#111;width:calc(100% - 28px);margin:12px 14px;padding:16px;border-radius:14px;font-weight:900;display:flex;justify-content:center;gap:8px;opacity:.9}
-.viewInfo{text-align:center;font-size:11px;opacity:.4;padding:4px 0 12px}
-</style>
-</head>
-<body>
- 
-<div id="login">
-<h1><span class="blue">PUSH OUT</span><br><span class="orange">OUT</span> <span class="blue">BATTLE</span></h1>
-<div class="badge">✔ 100% BESPLATNO</div>
-<h2>UNESI ŠIFRU ZA ULAZ</h2>
-<div class="inp"><input id="pass" type="password" placeholder="Upiši šifru" onkeydown="if(event.key==='Enter')go()"></div>
-<button class="btnLogin" onclick="go()">UĐI</button>
-<p id="err">Pogrešna šifra! Probaj opet.</p>
-</div>
- 
-<div id="app">
-<div class="top"><h1><span class="blue">PUSH OUT</span> <span class="orange">BATTLE</span></h1></div>
- 
-<div class="box">
-<div class="tag t1">🔴 LIVE NOW</div>
-<div class="tag t2" id="wt">👁 0 gleda</div>
-<video id="cam" autoplay muted playsinline></video>
-<div class="tag tView" id="viewMsg">👁 GLEDAŠ • UŽIVO • SAMO GLEDANJE</div>
-</div>
- 
-<div class="scoreWrap">
-<small id="matchLabel">BORBA #1 • AUTO</small>
-<div class="score"><span id="s1">0</span> : <span id="s2">0</span></div>
-<div class="infoYellow" id="yellowInfo" style="display:none">ⓘ Samo gledaš - ne možeš mijenjati rezultat</div>
-</div>
- 
-<div id="adminPanel">
-<div class="btns"><button class="bB" onclick="add('p')">+1 PLAVI</button><button class="bO" onclick="add('n')">+1 NARANČASTI</button></div>
-<button class="main live" id="lb" onclick="goLive()">📡 POKRENI LIVE AUTOMATSKI</button>
-<button class="main wa" onclick="share()">💬 PODJELI NA WHATSAPP GRUPU</button>
-</div>
- 
-<div id="viewerPanel" style="display:none">
-<div class="viewInfo">Samo gledaš - ne možeš mijenjati rezultat</div>
-<div class="viewLocked">👁 GLEDALAC MOD • 1 gledalac</div>
-</div>
- 
-</div>
- 
-<script>
-let b=0,o=0,br=1,isAdmin=false;
-function go(){
- let raw=document.getElementById('pass').value.trim();
- let up=raw.toUpperCase();
- if(up==="PUSH OF BATLE" || up==="PUSH OUT BATTLE" || up==="PUSH OF BATTLE"){
-   isAdmin=false; openApp(1);
- }else if(raw==="112255"){
-   isAdmin=true; openApp(0);
- }else{
-   document.getElementById('err').style.display='block';
- }
-}
-function openApp(viewers){
- document.getElementById('login').style.display='none';
- document.getElementById('app').style.display='block';
- if(isAdmin){
-   document.getElementById('adminPanel').style.display='block';
-   document.getElementById('viewerPanel').style.display='none';
-   document.getElementById('wt').textContent='👁 0 gleda';
-   document.getElementById('viewMsg').style.display='none';
-   document.getElementById('yellowInfo').style.display='none';
- }else{
-   document.getElementById('adminPanel').style.display='none';
-   document.getElementById('viewerPanel').style.display='block';
-   document.getElementById('wt').textContent='👁 1 gleda';
-   document.getElementById('viewMsg').style.display='block';
-   document.getElementById('yellowInfo').style.display='block';
- }
-}
-function add(t){
- if(!isAdmin)return;
- if(t==='p')b++; else o++;
- document.getElementById('s1').textContent=b;
- document.getElementById('s2').textContent=o;
-}
-async function goLive(){
- if(!isAdmin)return;
- try{
-  let s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-  document.getElementById('cam').srcObject=s;
-  br++;
-  document.getElementById('matchLabel').textContent=`BORBA #${br} • AUTO`;
-  b=0;o=0;
-  document.getElementById('s1').textContent=0;
-  document.getElementById('s2').textContent=0;
-  document.getElementById('lb').textContent='🔴 UŽIVO - SNIMA SE';
- }catch(e){alert('Dozvoli kameru u browseru')}
-}
-function share(){
- let base=location.href.split('?')[0];
- let link=base+'?view=1';
- let txt=`🔥 PUSH OUT BATTLE LIVE!\nBORBA #${br} - ${b}:${o}\nGledaj uživo: ${link}\nŠifra: PUSH OF BATLE`;
- window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
-}
-// Auto ulaz ako je ?view=1
-let params=new URLSearchParams(location.search);
-if(params.get('view')==='1'){
- document.getElementById('pass').value='PUSH OF BATLE';
- go();
-}
+
+window.addEventListener('DOMContentLoaded', () => {
+    let params = new URLSearchParams(location.search);
+    if(params.get('view') === '1'){
+        document.getElementById('pass').value = 'PUSH OUT BATTLE';
+        go();
+    }
+});
 </script>
 </body>
 </html>
