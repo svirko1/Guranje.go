@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>PUSH OUT BATTLE - ULTIMATE LIVE</title>
+<title>PUSH OUT BATTLE</title>
 
 <!-- PeerJS (Video & Audio) -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -81,7 +81,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 <div class="tag t1" id="statusTag">🔴 UŽIVO</div>
 <div class="tag t2" id="viewerCount">👁️ 0 ONLINE</div>
 <div id="emojiLayer"></div>
-<video id="cam" autoplay playsinline></video>
+<video id="cam" autoplay playsinline webkit-playsinline></video>
 </div>
 
 <div class="scoreWrap">
@@ -115,7 +115,10 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 </div>
 
 <div id="viewerPanel" style="display:none">
-<button class="main playBtn" id="startBtn" onclick="connectToStream()">🔊 PRITISNI ZA UČITAVANJE SLIKE I ZVUKA</button>
+<button class="main playBtn" id="startBtn" onclick="connectToStream()">🔊 UKLJUČI SLIKU I ZVUK UŽIVO</button>
+<p id="audioNotice" style="font-size: 11px; text-align: center; color: #aaa; margin-top: 4px; display: none;">
+💡 Ako nema zvuka, provjerite je li mobitel prebačen s nečujnog moda (Silent Switch).
+</p>
 </div>
 
 <div class="history">
@@ -181,11 +184,11 @@ function openApp(){
     
     let videoElem = document.getElementById('cam');
     if(isAdmin){
-        videoElem.muted = true; // Admin sebi utiša kameru da nema jeke
+        videoElem.muted = true; 
     } else {
         document.getElementById('adminPanel').style.display = 'none';
         document.getElementById('viewerPanel').style.display = 'block';
-        videoElem.muted = false; // Gledatelju je zvuk prisilno uključen
+        videoElem.muted = false;
     }
 }
 
@@ -290,21 +293,27 @@ async function goLive(){
         localStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: currentFacingMode }, 
             audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
+                echoCancellation: false,
+                noiseSuppression: false,
                 autoGainControl: true
             }
         });
         
         let videoElem = document.getElementById('cam');
         videoElem.srcObject = localStream;
-        videoElem.muted = true; // Sprečava jeku kod admina
+        videoElem.muted = true;
         
-        peer = new Peer(roomId, peerConfig);
-        peer.on('open', () => document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO');
-        peer.on('call', (call) => call.answer(localStream));
+        if(!peer){
+            peer = new Peer(roomId, peerConfig);
+            peer.on('open', () => document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO');
+            
+            // Kada se gledatelj javi, šaljemo mu stream
+            peer.on('call', (call) => {
+                call.answer(localStream);
+            });
+        }
 
-    } catch(e) { alert('Dozvoli pristup kameri i mikrofonu.'); }
+    } catch(e) { alert('Dozvoli pristup kameri i mikrofonu u postavkama preglednika.'); }
 }
 
 async function switchCamera(){
@@ -316,32 +325,38 @@ async function switchCamera(){
 
 function connectToStream(){
     let btn = document.getElementById('startBtn');
-    btn.textContent = '⌛ SPAJANJE NA PRIJENOS...';
+    let notice = document.getElementById('audioNotice');
+    btn.textContent = '⌛ SPAJANJE...';
 
+    if(peer) peer.destroy();
+    
     peer = new Peer(peerConfig);
     peer.on('open', () => {
-        let canvas = document.createElement('canvas');
-        let emptyStream = canvas.captureStream();
-        let call = peer.call(roomId, emptyStream);
+        // Otvaramo poziv prema Adminu
+        let call = peer.call(roomId, new MediaStream()); // Šaljemo prazan kontejner
         
         call.on('stream', (remoteStream) => {
             let videoElem = document.getElementById('cam');
             videoElem.srcObject = remoteStream;
-            videoElem.muted = false; // Prisilno omogućavamo zvuk gledatelju
+            videoElem.muted = false;
             videoElem.volume = 1.0;
             
-            videoElem.play().then(() => {
-                btn.style.display = 'none';
-            }).catch(() => {
-                btn.textContent = '▶ KLIKNI ZA REPRODUKCIJU ZVUKA';
-            });
+            let playPromise = videoElem.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    btn.style.display = 'none';
+                    notice.style.display = 'block';
+                }).catch(error => {
+                    btn.textContent = '▶ SLIKA ILI ZVUK BLOKIRANI (KLIKNI ZA REPRODUKCIJU)';
+                });
+            }
         });
 
         setTimeout(() => {
-            if(btn.style.display !== 'none') {
-                btn.textContent = '❌ REFRESHAJ (ADMIN NIJE LIVE)';
+            if(btn.style.display !== 'none' && btn.textContent.includes('SPAJANJE')) {
+                btn.textContent = '⚠️ ADMIN JOŠ NIJE UŽIVO (KLIKNI OPET)';
             }
-        }, 8000);
+        }, 5000);
     });
 }
 
