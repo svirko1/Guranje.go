@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>PUSH OUT BATTLE - REAL VAR EDITION</title>
+<title>PUSH OUT BATTLE</title>
 
 <!-- PeerJS & Firebase -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -93,6 +93,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 .chatModBtns{display:flex;gap:4px}
 .modBtn{background:#e53e3e;border:none;color:#fff;padding:2px 5px;border-radius:4px;font-size:10px;cursor:pointer}
 .pinBtn{background:#ff8c00}
+.editBtn{background:#1a84ff}
 
 .chatInputWrap{padding:10px;display:flex;gap:6px;border-top:1px solid var(--border-color)}
 .chatInputWrap input{flex:1;background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-color);padding:10px;border-radius:10px;outline:none}
@@ -164,7 +165,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
                 <button onclick="toggleFullscreen()">🗖 FULLSCREEN</button>
             </div>
             <div id="emojiLayer"></div>
-            <video id="cam" autoplay playsinline></video>
+            <video id="cam" autoplay playsinline muted></video>
             <video id="varPlayer" playsinline muted></video>
         </div>
 
@@ -295,11 +296,13 @@ let myName = "";
 let myUserId = "u_" + Math.random().toString(36).substring(2, 9);
 let currentRound = 1, timerSeconds = 90, isTimerRunning = false;
 let reactionCount = 0, isMuted = false, isAudioOnly = false;
+let customNames = {};
 
 // Real VAR Buffer Variables
 let mediaRecorder = null;
 let recordedChunks = [];
 let selectedVarSec = 5;
+let currentVarTime = 0;
 
 const peerConfig = {
     config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
@@ -348,6 +351,7 @@ function openApp(){
     listenToPoll();
     listenToAnnouncements();
     listenToRealVAR();
+    listenToCustomNames();
 }
 
 function toggleTheme(){ document.body.classList.toggle('light-mode'); }
@@ -378,24 +382,27 @@ function startVarBuffer(){
     if(!localStream) return;
     try {
         recordedChunks = [];
-        mediaRecorder = new MediaRecorder(localStream, { mimeType: 'video/webm' });
+        let options = { mimeType: 'video/webm' };
+        if (!MediaRecorder.isTypeSupported('video/webm')) {
+            options = { mimeType: 'video/mp4' };
+        }
+        mediaRecorder = new MediaRecorder(localStream, options);
         mediaRecorder.ondataavailable = (e) => {
             if (e.data.size > 0) {
                 recordedChunks.push(e.data);
-                if (recordedChunks.length > 30) recordedChunks.shift(); // keep max last ~15s
+                if (recordedChunks.length > 30) recordedChunks.shift();
             }
         };
-        mediaRecorder.start(500); // chunk every 0.5s
-    } catch(e) { console.log('Buffer nije podržan na uređaju.'); }
+        mediaRecorder.start(500);
+    } catch(e) { console.log('Buffer greška:', e); }
 }
 
 function triggerRealVAR(){
     if(!isAdmin || recordedChunks.length === 0) return alert('Spremnik videa se još puni... pričekajte sekundu.');
     
-    // Pick chunks corresponding to selected seconds
     let neededChunksCount = selectedVarSec * 2; 
     let sliceChunks = recordedChunks.slice(-neededChunksCount);
-    let blob = new Blob(sliceChunks, { type: 'video/webm' });
+    let blob = new Blob(sliceChunks, { type: mediaRecorder.mimeType || 'video/webm' });
     
     let reader = new FileReader();
     reader.readAsDataURL(blob);
@@ -418,20 +425,31 @@ function listenToRealVAR(){
         let cam = document.getElementById('cam');
 
         if(val && val.active && val.videoData){
-            varTag.style.display = 'block';
-            varPlayer.style.display = 'block';
-            cam.style.opacity = '0';
-            
-            varPlayer.src = val.videoData;
-            varPlayer.playbackRate = 0.5; // Slow motion 0.5x
-            varPlayer.play();
+            if(val.time !== currentVarTime){
+                currentVarTime = val.time;
+                varTag.style.display = 'block';
+                varPlayer.style.display = 'block';
+                cam.style.opacity = '0';
+                
+                varPlayer.src = val.videoData;
+                varPlayer.load();
+                varPlayer.playbackRate = 0.5;
+                
+                let playPromise = varPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("Autoplay spriječen ili greška kod ucitavanja:", error);
+                    });
+                }
 
-            varPlayer.onended = () => {
-                varTag.style.display = 'none';
-                varPlayer.style.display = 'none';
-                cam.style.opacity = '1';
-                if(isAdmin) db.ref('rooms/' + roomId + '/realVar/active').set(false);
-            };
+                varPlayer.onended = () => {
+                    varTag.style.display = 'none';
+                    varPlayer.style.display = 'none';
+                    cam.style.opacity = '1';
+                    varPlayer.src = "";
+                    if(isAdmin) db.ref('rooms/' + roomId + '/realVar/active').set(false);
+                };
+            }
         } else {
             varTag.style.display = 'none';
             varPlayer.style.display = 'none';
@@ -456,33 +474,22 @@ function sendChat(){
     input.value = '';
 }
 
-function listenToChat(){
-    db.ref('rooms/' + roomId + '/chat').on('child_added', (snap) => {
-        let data = snap.val();
-        let box = document.getElementById('chatMsgs');
-        let div = document.createElement('div');
-        div.className = 'chatMsg';
-        
-        let authorClass = data.isMod ? 'author modAuthor' : 'author';
-        let vipHTML = data.isVip ? `<span class="vipBadge">🔥 VIP</span>` : '';
-        
-        let modBtnsHTML = isAdmin ? `
-            <div class="chatModBtns">
-                <button class="modBtn pinBtn" onclick="pinMessage('${data.text}')">📌</button>
-                <button class="modBtn" onclick="muteUser('${data.senderId}')">🔇</button>
-                <button class="modBtn" onclick="kickUser('${data.senderId}')">❌</button>
-            </div>` : '';
+function listenToCustomNames(){
+    db.ref('rooms/' + roomId + '/customNames').on('value', (snap) => {
+        customNames = snap.val() || {};
+        renderChatMessages();
+    });
+}
 
-        div.innerHTML = `
-            <div>
-                ${vipHTML}
-                <span class="${authorClass}">${data.name}:</span>
-                <span>${data.text}</span>
-            </div>
-            ${modBtnsHTML}
-        `;
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
+let allChatData = [];
+
+function listenToChat(){
+    db.ref('rooms/' + roomId + '/chat').on('value', (snap) => {
+        allChatData = [];
+        snap.forEach((child) => {
+            allChatData.push(child.val());
+        });
+        renderChatMessages();
     });
 
     db.ref('rooms/' + roomId + '/pinned').on('value', (snap) => {
@@ -493,6 +500,46 @@ function listenToChat(){
             pinElem.style.display = 'block';
         } else { pinElem.style.display = 'none'; }
     });
+}
+
+function renderChatMessages(){
+    let box = document.getElementById('chatMsgs');
+    box.innerHTML = '';
+    
+    allChatData.forEach(data => {
+        let div = document.createElement('div');
+        div.className = 'chatMsg';
+        
+        let authorClass = data.isMod ? 'author modAuthor' : 'author';
+        let vipHTML = data.isVip ? `<span class="vipBadge">🔥 VIP</span>` : '';
+        let displayName = customNames[data.senderId] || data.name;
+        
+        let modBtnsHTML = isAdmin ? `
+            <div class="chatModBtns">
+                <button class="modBtn editBtn" onclick="editUserName('${data.senderId}', '${displayName}')">✏️</button>
+                <button class="modBtn pinBtn" onclick="pinMessage('${data.text}')">📌</button>
+                <button class="modBtn" onclick="muteUser('${data.senderId}')">🔇</button>
+                <button class="modBtn" onclick="kickUser('${data.senderId}')">❌</button>
+            </div>` : '';
+
+        div.innerHTML = `
+            <div>
+                ${vipHTML}
+                <span class="${authorClass}">${displayName}:</span>
+                <span>${data.text}</span>
+            </div>
+            ${modBtnsHTML}
+        `;
+        box.appendChild(div);
+    });
+    box.scrollTop = box.scrollHeight;
+}
+
+function editUserName(uid, currentVal){
+    let newName = prompt("Unesite novo ime za ovog korisnika:", currentVal);
+    if(newName && newName.trim() !== ""){
+        db.ref('rooms/' + roomId + '/customNames/' + uid).set(newName.trim());
+    }
 }
 
 function sendAnnouncement(){
