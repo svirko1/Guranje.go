@@ -14,50 +14,72 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,system-ui}
-body{background:#080a14;color:#fff;max-width:480px;margin:auto;min-height:100vh;padding-bottom:20px}
+body{background:#080a14;color:#fff;max-width:900px;margin:auto;min-height:100vh;padding-bottom:20px}
 #login{position:fixed;inset:0;background:#080a14;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
 #login h1{font-size:38px;font-weight:900;line-height:.9;text-align:center}
 .blue{color:#1a84ff}.orange{color:#ff8c00}
 .badge{margin-top:14px;background:#e53e3e;color:#fff;padding:8px 18px;border-radius:99px;font-weight:900;font-size:13px}
-#login h2{margin-top:30px;font-size:18px}
-.inp{margin-top:15px;width:100%;background:#1c203d;border:1px solid #2a2f66;border-radius:18px;display:flex;padding:0 16px}
-.inp input{flex:1;background:transparent;border:none;color:#fff;padding:16px 10px;font-size:16px;outline:none;text-align:center}
-.btnLogin{margin-top:15px;width:100%;background:#0cc144;border:none;color:#fff;padding:16px;border-radius:18px;font-weight:900;font-size:20px;cursor:pointer}
+#login h2{margin-top:20px;font-size:16px;color:#aaa;text-align:center}
+.inp{margin-top:10px;width:100%;max-width:320px;background:#1c203d;border:1px solid #2a2f66;border-radius:18px;display:flex;padding:0 16px}
+.inp input{flex:1;background:transparent;border:none;color:#fff;padding:14px 10px;font-size:16px;outline:none;text-align:center}
+.btnLogin{margin-top:15px;width:100%;max-width:320px;background:#0cc144;border:none;color:#fff;padding:16px;border-radius:18px;font-weight:900;font-size:18px;cursor:pointer}
 #err{color:#ff4444;font-size:13px;margin-top:10px;display:none;text-align:center}
-#app{display:none}
-.top{text-align:center;padding:14px 14px 0}
+
+#app{display:none;padding:0 10px}
+.top{text-align:center;padding:14px 0}
 .top h1{font-size:26px;font-weight:900}
 
-.box{margin:14px;background:#000;border-radius:22px;overflow:hidden;position:relative;height:250px;border:1px solid #222}
+/* YouTube Style Grid Layout */
+.mainGrid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width: 768px){
+    .mainGrid{grid-template-columns: 1fr 320px;}
+}
+
+.box{background:#000;border-radius:18px;overflow:hidden;position:relative;height:260px;border:1px solid #222}
 .tag{position:absolute;top:12px;padding:6px 12px;border-radius:99px;font-size:12px;font-weight:900;z-index:2}
 .t1{left:12px;background:#ff2a2a;color:#fff}
 .t2{right:12px;background:rgba(0,0,0,0.7);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.fullscreenBtn{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.6);border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;z-index:5}
+
 video{width:100%;height:100%;object-fit:cover;background:#111}
 
 #emojiLayer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:10}
 .floating-emoji{position:absolute;bottom:0;font-size:32px;animation:floatUp 2s linear forwards}
 @keyframes floatUp{0%{transform:translateY(0) scale(0.8);opacity:1}100%{transform:translateY(-220px) scale(1.4);opacity:0}}
 
-.scoreWrap{margin:14px;background:#131632;border-radius:18px;padding:16px;text-align:center;border:1px solid #1f234a}
+/* Chat Layout */
+.chatWrap{background:#131632;border-radius:18px;border:1px solid #1f234a;display:flex;flex-direction:column;height:350px}
+@media(min-width: 768px){ .chatWrap{height: 100%; min-height:400px;} }
+.chatHeader{padding:10px 14px;border-bottom:1px solid #1f234a;font-weight:bold;font-size:13px;color:#aaa}
+.chatMessages{flex:1;padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.chatMsg{background:#1c203d;padding:8px 10px;border-radius:10px;word-break:break-word;display:flex;justify-content:space-between;align-items:flex-start}
+.chatMsg .author{font-weight:bold;color:#1a84ff;margin-right:6px}
+.chatMsg .modAuthor{color:#ff8c00}
+.kickBtn{background:#e53e3e;border:none;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:6px}
+.chatInputWrap{padding:10px;display:flex;gap:6px;border-top:1px solid #1f234a}
+.chatInputWrap input{flex:1;background:#1c203d;border:1px solid #2a2f66;color:#fff;padding:10px;border-radius:10px;outline:none}
+.chatInputWrap button{background:#1a84ff;border:none;color:#fff;padding:0 14px;border-radius:10px;font-weight:bold;cursor:pointer}
+
+.scoreWrap{margin-top:14px;background:#131632;border-radius:18px;padding:16px;text-align:center;border:1px solid #1f234a}
 .names{display:flex;justify-content:space-between;font-weight:900;font-size:16px;margin-bottom:6px}
 .score{font-size:58px;font-weight:900;line-height:1}
 
-.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 10px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0}
 .btns button{padding:12px;border:none;border-radius:12px;font-weight:900;font-size:13px;cursor:pointer;color:#fff}
 .bB{background:#1a84ff}.bO{background:#ff7a00}.bBMinus{background:#0d47a1}.bOMinus{background:#b75300}
 
-.main{width:calc(100% - 28px);margin:0 14px 8px;padding:14px;border:none;border-radius:14px;font-weight:900;font-size:14px;display:flex;justify-content:center;align-items:center;gap:6px;cursor:pointer;color:#fff}
+.main{width:100%;margin-bottom:8px;padding:14px;border:none;border-radius:14px;font-weight:900;font-size:14px;display:flex;justify-content:center;align-items:center;gap:6px;cursor:pointer;color:#fff}
 .live{background:#ff2d2d}.wa{background:#0cc144}.reset{background:#e53e3e}.sec{background:#2a2f66}
 .playBtn{background:#1a84ff;animation:pulse 1.5s infinite}
 @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
 
-.reactions{display:flex;justify-content:space-around;padding:10px 14px;background:#131632;margin:10px 14px;border-radius:14px;border:1px solid #1f234a}
+.reactions{display:flex;justify-content:space-around;padding:10px;background:#131632;margin-top:10px;border-radius:14px;border:1px solid #1f234a}
 .reactions button{background:transparent;border:none;font-size:26px;cursor:pointer}
 
-.inputsWrap{margin:0 14px 10px;display:flex;gap:8px}
+.inputsWrap{margin-top:10px;display:flex;gap:8px}
 .inputsWrap input{flex:1;background:#1c203d;border:1px solid #2a2f66;color:#fff;padding:10px;border-radius:10px;text-align:center;font-weight:bold;outline:none}
 
-.history{margin:10px 14px;background:#131632;border-radius:14px;padding:12px;font-size:13px;border:1px solid #1f234a}
+.history{margin-top:14px;background:#131632;border-radius:14px;padding:12px;font-size:13px;border:1px solid #1f234a}
 .history h3{font-size:12px;color:#888;margin-bottom:6px;text-transform:uppercase}
 .history ul{list-style:none;max-height:80px;overflow-y:auto}
 .history li{padding:4px 0;border-bottom:1px solid #1c203d;display:flex;justify-content:space-between}
@@ -68,8 +90,15 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 <div id="login">
 <h1><span class="blue">PUSH OUT</span><br><span class="orange">BATTLE</span></h1>
 <div class="badge">🔒 PRIVATNI PRIJENOS</div>
-<h2>UNESI ŠIFRU ILI KOD SOBA</h2>
+
+<h2 id="loginTitle">UNESI ŠIFRU ILI KOD SOBE</h2>
 <div class="inp"><input id="pass" type="password" placeholder="Šifra ili Kod Sobe" onkeydown="if(event.key==='Enter')go()"></div>
+
+<div id="nameBlock" style="display:none; width:100%; max-width:320px; text-align:center;">
+    <h2 style="margin-top:15px">UNESI TVOJE IME (ZA CHAT)</h2>
+    <div class="inp"><input id="userName" type="text" placeholder="Tvoje Ime"></div>
+</div>
+
 <button class="btnLogin" onclick="go()">PRISTUPI</button>
 <p id="err">Nevažeća šifra ili kod sobe!</p>
 </div>
@@ -77,50 +106,66 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 <div id="app">
 <div class="top"><h1><span class="blue">PUSH OUT</span> <span class="orange">BATTLE</span></h1></div>
 
-<div class="box">
-<div class="tag t1" id="statusTag">🔴 UŽIVO</div>
-<div class="tag t2" id="viewerCount">👁️ 0 GLEDATELJA</div>
-<div id="emojiLayer"></div>
-<video id="cam" autoplay playsinline></video>
-</div>
+<div class="mainGrid">
+    <!-- Lijevi dio (Video & Kontrole) -->
+    <div>
+        <div class="box" id="videoContainer">
+            <div class="tag t1" id="statusTag">🔴 UŽIVO</div>
+            <div class="tag t2" id="viewerCount">👁️ 0 GLEDATELJA</div>
+            <button class="fullscreenBtn" onclick="toggleFullscreen()">🗖 POHRANI / UVEĆAJ</button>
+            <div id="emojiLayer"></div>
+            <video id="cam" autoplay playsinline></video>
+        </div>
 
-<div class="scoreWrap">
-<div class="names"><span class="blue" id="p1Name">PLAVI</span><span class="orange" id="p2Name">NARANČASTI</span></div>
-<div class="score"><span id="s1">0</span> : <span id="s2">0</span></div>
-<small id="matchLabel" style="color:#888;font-size:11px;margin-top:6px;display:block">BORBA U TIJEKU</small>
-</div>
+        <div class="scoreWrap">
+            <div class="names"><span class="blue" id="p1Name">PLAVI</span><span class="orange" id="p2Name">NARANČASTI</span></div>
+            <div class="score"><span id="s1">0</span> : <span id="s2">0</span></div>
+            <small id="matchLabel" style="color:#888;font-size:11px;margin-top:6px;display:block">BORBA U TIJEKU</small>
+        </div>
 
-<div class="reactions">
-<button onclick="sendReaction('🔥')">🔥</button>
-<button onclick="sendReaction('👏')">👏</button>
-<button onclick="sendReaction('😮')">😮</button>
-<button onclick="sendReaction('💪')">💪</button>
-</div>
+        <div class="reactions">
+            <button onclick="sendReaction('🔥')">🔥</button>
+            <button onclick="sendReaction('👏')">👏</button>
+            <button onclick="sendReaction('😮')">😮</button>
+            <button onclick="sendReaction('💪')">💪</button>
+        </div>
 
-<div id="adminPanel">
-<div class="inputsWrap">
-<input id="name1" placeholder="Ime Plavog" oninput="updateNames()">
-<input id="name2" placeholder="Ime Narančastog" oninput="updateNames()">
-</div>
-<div class="btns">
-<button class="bB" onclick="add('p', 1)">+1 PLAVI</button>
-<button class="bO" onclick="add('n', 1)">+1 NARANČASTI</button>
-<button class="bBMinus" onclick="add('p', -1)">-1 PLAVI</button>
-<button class="bOMinus" onclick="add('n', -1)">-1 NARANČASTI</button>
-</div>
-<button class="main reset" onclick="resetMatch()">🔄 NOVA BORBA (RESET)</button>
-<button class="main live" id="lb" onclick="goLive()">📡 POKRENI KAMERU I SOBU</button>
-<button class="main sec" onclick="switchCamera()">🔄 PROMIJENI KAMERU</button>
-<button class="main wa" onclick="share()">💬 PODIJELE PRIVATNI LINK NA WA</button>
-</div>
+        <div id="adminPanel">
+            <div class="inputsWrap">
+                <input id="name1" placeholder="Ime Plavog" oninput="updateNames()">
+                <input id="name2" placeholder="Ime Narančastog" oninput="updateNames()">
+            </div>
+            <div class="btns">
+                <button class="bB" onclick="add('p', 1)">+1 PLAVI</button>
+                <button class="bO" onclick="add('n', 1)">+1 NARANČASTI</button>
+                <button class="bBMinus" onclick="add('p', -1)">-1 PLAVI</button>
+                <button class="bOMinus" onclick="add('n', -1)">-1 NARANČASTI</button>
+            </div>
+            <button class="main reset" onclick="resetMatch()">🔄 NOVA BORBA (RESET)</button>
+            <button class="main live" id="lb" onclick="goLive()">📡 POKRENI KAMERU I SOBU</button>
+            <button class="main sec" onclick="switchCamera()">🔄 PROMIJENI KAMERU</button>
+            <button class="main wa" onclick="share()">💬 PODIJELE PRIVATNI LINK NA WA</button>
+        </div>
 
-<div id="viewerPanel" style="display:none">
-<button class="main playBtn" id="startBtn" onclick="connectToStream()">▶ PRITISNI ZA GLEDANJE UŽIVO</button>
-</div>
+        <div id="viewerPanel" style="display:none; margin-top:10px">
+            <button class="main playBtn" id="startBtn" onclick="connectToStream()">▶ PRITISNI ZA GLEDANJE UŽIVO</button>
+        </div>
 
-<div class="history">
-<h3>POVIJEST POBJEDA (TRENUTNI TURNIR)</h3>
-<ul id="historyList"></ul>
+        <div class="history">
+            <h3>POVIJEST POBJEDA (TRENUTNI TURNIR)</h3>
+            <ul id="historyList"></ul>
+        </div>
+    </div>
+
+    <!-- Desni dio (CHAT UŽIVO) -->
+    <div class="chatWrap">
+        <div class="chatHeader">💬 CHAT UŽIVO</div>
+        <div class="chatMessages" id="chatMsgs"></div>
+        <div class="chatInputWrap">
+            <input id="chatInput" placeholder="Napiši komentar..." onkeydown="if(event.key==='Enter')sendChat()">
+            <button onclick="sendChat()">></button>
+        </div>
+    </div>
 </div>
 
 </div>
@@ -143,6 +188,8 @@ const db = firebase.database();
 let b=0, o=0, isAdmin=false;
 let peer = null, localStream = null, roomId = "";
 let currentFacingMode = "environment";
+let myName = "";
+let myUserId = "u_" + Math.random().toString(36).substring(2, 9);
 
 const peerConfig = {
     config: {
@@ -155,21 +202,26 @@ const peerConfig = {
 
 function go(){
     let raw = document.getElementById('pass').value.trim();
+    let nameVal = document.getElementById('userName').value.trim();
     document.getElementById('err').style.display = 'none';
 
     if(raw === "112255"){
         isAdmin = true;
+        myName = "[MOD] Voditelj";
         roomId = "POB-" + Math.floor(1000 + Math.random() * 9000);
         openApp();
-        listenToScore();
-        trackPresence();
     } else if(raw.startsWith("POB-")){
+        if(!nameVal){
+            document.getElementById('err').textContent = "Molimo unesite vaše ime!";
+            document.getElementById('err').style.display = 'block';
+            return;
+        }
         isAdmin = false;
+        myName = nameVal;
         roomId = raw;
         openApp();
-        listenToScore();
-        trackPresence();
     } else {
+        document.getElementById('err').textContent = "Nevažeća šifra ili kod sobe!";
         document.getElementById('err').style.display = 'block';
     }
 }
@@ -178,21 +230,26 @@ function openApp(){
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     document.getElementById('matchLabel').textContent = (isAdmin ? "KOD SOBE: " : "GLEDAŠ SOBU: ") + roomId;
+    
     if(!isAdmin){
         document.getElementById('adminPanel').style.display = 'none';
         document.getElementById('viewerPanel').style.display = 'block';
     }
+
+    listenToScore();
+    trackPresence();
+    listenToChat();
+    listenToKicks();
 }
 
-// Brojanje spojenih korisnika uživo
 function trackPresence(){
-    const myPresenceRef = db.ref('rooms/' + roomId + '/presence').push();
+    const myPresenceRef = db.ref('rooms/' + roomId + '/presence/' + myUserId);
     const connectedRef = db.ref('.info/connected');
 
     connectedRef.on('value', (snap) => {
         if (snap.val() === true) {
             myPresenceRef.onDisconnect().remove();
-            myPresenceRef.set(true);
+            myPresenceRef.set({ name: myName });
         }
     });
 
@@ -200,6 +257,69 @@ function trackPresence(){
         let count = snap.numChildren();
         document.getElementById('viewerCount').textContent = `👁️ ${count} ONLINE`;
     });
+}
+
+function sendChat(){
+    let input = document.getElementById('chatInput');
+    let msg = input.value.trim();
+    if(!msg) return;
+
+    db.ref('rooms/' + roomId + '/chat').push({
+        senderId: myUserId,
+        name: myName,
+        text: msg,
+        isMod: isAdmin
+    });
+    input.value = '';
+}
+
+function listenToChat(){
+    db.ref('rooms/' + roomId + '/chat').on('child_added', (snap) => {
+        let data = snap.val();
+        let box = document.getElementById('chatMsgs');
+        
+        let div = document.createElement('div');
+        div.className = 'chatMsg';
+        
+        let authorClass = data.isMod ? 'author modAuthor' : 'author';
+        let kickBtnHTML = (isAdmin && !data.isMod) ? `<button class="kickBtn" onclick="kickUser('${data.senderId}', '${data.name}')">KICK</button>` : '';
+
+        div.innerHTML = `
+            <div>
+                <span class="${authorClass}">${data.name}:</span>
+                <span>${data.text}</span>
+            </div>
+            ${kickBtnHTML}
+        `;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    });
+}
+
+function kickUser(targetUserId, targetName){
+    if(!isAdmin) return;
+    if(confirm(`Želite li izbaciti korisnika ${targetName}?`)){
+        db.ref('rooms/' + roomId + '/kicked/' + targetUserId).set(true);
+    }
+}
+
+function listenToKicks(){
+    db.ref('rooms/' + roomId + '/kicked/' + myUserId).on('value', (snap) => {
+        if(snap.val() === true){
+            alert('Izbačeni ste iz sobe od strane voditelja.');
+            location.reload();
+        }
+    });
+}
+
+function toggleFullscreen(){
+    let elem = document.getElementById('videoContainer');
+    if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+    }
 }
 
 function add(t, val){
@@ -290,7 +410,7 @@ async function goLive(){
         
         let videoElem = document.getElementById('cam');
         videoElem.srcObject = localStream;
-        videoElem.muted = true; // Adminu se utišava vlastiti mikrofon da nema jeke
+        videoElem.muted = true;
         
         peer = new Peer(roomId, peerConfig);
         peer.on('open', () => document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO');
@@ -312,7 +432,6 @@ function connectToStream(){
 
     peer = new Peer(peerConfig);
     peer.on('open', () => {
-        // Stvaranje praznog audio i video stream-a radi mobilne kompatibilnosti
         let ctx = new (window.AudioContext || window.webkitAudioContext)();
         let osc = ctx.createOscillator();
         let dst = osc.connect(ctx.createMediaStreamDestination());
@@ -328,7 +447,7 @@ function connectToStream(){
         call.on('stream', (remoteStream) => {
             let videoElem = document.getElementById('cam');
             videoElem.srcObject = remoteStream;
-            videoElem.muted = false; // Prisilno uključivanje zvuka na gledatelju
+            videoElem.muted = false;
             videoElem.volume = 1.0;
 
             videoElem.play().then(() => {
@@ -358,7 +477,8 @@ window.addEventListener('DOMContentLoaded', () => {
     let roomParam = params.get('room');
     if(roomParam){
         document.getElementById('pass').value = roomParam;
-        go();
+        document.getElementById('loginTitle').textContent = "PRISTUPATE SOBI " + roomParam;
+        document.getElementById('nameBlock').style.display = 'block';
     }
 });
 </script>
