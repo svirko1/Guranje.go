@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>PUSH OUT BATTLE - ULTIMATE LIVE</title>
 
+<!-- PeerJS (Video) -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+<!-- Firebase (Podaci uživo) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -75,10 +78,10 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 <div class="top"><h1><span class="blue">PUSH OUT</span> <span class="orange">BATTLE</span></h1></div>
 
 <div class="box">
-<div class="tag t1" id="statusTag">🔴 SPREMNO</div>
-<div class="tag t2" id="viewerCount">👁️ 0 ONLINE</div>
+<div class="tag t1" id="statusTag">🔴 UŽIVO</div>
+<div class="tag t2" id="viewerCount">👁️ 0 GLEDATELJA</div>
 <div id="emojiLayer"></div>
-<video id="cam" autoplay playsinline webkit-playsinline></video>
+<video id="cam" autoplay playsinline></video>
 </div>
 
 <div class="scoreWrap">
@@ -112,7 +115,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 </div>
 
 <div id="viewerPanel" style="display:none">
-<button class="main playBtn" id="startBtn" onclick="connectToStream()">⏳ ČEKAM DA ADMIN POKRENE STREAM...</button>
+<button class="main playBtn" id="startBtn" onclick="connectToStream()">▶ PRITISNI ZA GLEDANJE UŽIVO</button>
 </div>
 
 <div class="history">
@@ -141,15 +144,11 @@ let b=0, o=0, isAdmin=false;
 let peer = null, localStream = null, roomId = "";
 let currentFacingMode = "environment";
 
-// Javni STUN/TURN poslužitelji za preskakanje mobilnih blokada
 const peerConfig = {
     config: {
         'iceServers': [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' }
+            { urls: 'stun:stun1.l.google.com:19302' }
         ]
     }
 };
@@ -170,7 +169,6 @@ function go(){
         openApp();
         listenToScore();
         trackPresence();
-        listenToStreamStatus(); // Automatsko praćenje pokretanja kamere
     } else {
         document.getElementById('err').style.display = 'block';
     }
@@ -180,17 +178,13 @@ function openApp(){
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     document.getElementById('matchLabel').textContent = (isAdmin ? "KOD SOBE: " : "GLEDAŠ SOBU: ") + roomId;
-    
-    let videoElem = document.getElementById('cam');
-    if(isAdmin){
-        videoElem.muted = true; 
-    } else {
+    if(!isAdmin){
         document.getElementById('adminPanel').style.display = 'none';
         document.getElementById('viewerPanel').style.display = 'block';
-        videoElem.muted = false;
     }
 }
 
+// Brojanje spojenih korisnika uživo
 function trackPresence(){
     const myPresenceRef = db.ref('rooms/' + roomId + '/presence').push();
     const connectedRef = db.ref('.info/connected');
@@ -272,21 +266,6 @@ function listenToScore(){
     });
 }
 
-function listenToStreamStatus(){
-    db.ref('rooms/' + roomId + '/streamActive').on('value', (snap) => {
-        let btn = document.getElementById('startBtn');
-        if(snap.val() === true){
-            btn.textContent = '🔴 ADMIN JE UŽIVO! KLIKNI OVDJE ZA SLIKU I ZVUK';
-            btn.style.background = '#0cc144';
-            document.getElementById('statusTag').textContent = '🔴 UŽIVO';
-        } else {
-            btn.textContent = '⏳ ČEKAM DA ADMIN POKRENI STREAM...';
-            btn.style.background = '#1a84ff';
-            document.getElementById('statusTag').textContent = '⏳ ČEKANJE';
-        }
-    });
-}
-
 function sendReaction(emoji){
     db.ref('rooms/' + roomId + '/reactions').push(emoji);
 }
@@ -306,33 +285,18 @@ async function goLive(){
     try {
         localStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: currentFacingMode }, 
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true
-            }
+            audio: true
         });
         
         let videoElem = document.getElementById('cam');
         videoElem.srcObject = localStream;
-        videoElem.muted = true;
+        videoElem.muted = true; // Adminu se utišava vlastiti mikrofon da nema jeke
         
-        let hostPeerId = roomId + "-host";
-        if(peer) peer.destroy();
-        
-        peer = new Peer(hostPeerId, peerConfig);
-        peer.on('open', () => {
-            document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO';
-            document.getElementById('statusTag').textContent = '🔴 UŽIVO';
-            db.ref('rooms/' + roomId + '/streamActive').set(true);
-        });
+        peer = new Peer(roomId, peerConfig);
+        peer.on('open', () => document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO');
+        peer.on('call', (call) => call.answer(localStream));
 
-        // Odgovara na sve pozive gledatelja slanjem audio/video streama
-        peer.on('call', (call) => {
-            call.answer(localStream);
-        });
-
-    } catch(e) { alert('Pratite dozvole za kameru i mikrofon.'); }
+    } catch(e) { alert('Dozvoli pristup kameri/mikrofonu.'); }
 }
 
 async function switchCamera(){
@@ -344,35 +308,41 @@ async function switchCamera(){
 
 function connectToStream(){
     let btn = document.getElementById('startBtn');
-    btn.textContent = '⌛ SPAJANJE S ADMINOM...';
+    btn.textContent = '⌛ SPAJANJE NA PRIJENOS...';
 
-    if(peer) peer.destroy();
-    
     peer = new Peer(peerConfig);
     peer.on('open', () => {
-        let hostPeerId = roomId + "-host";
-        
-        // Stvaranje audio/video poziva prema adminu
-        let call = peer.call(hostPeerId, new MediaStream());
+        // Stvaranje praznog audio i video stream-a radi mobilne kompatibilnosti
+        let ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let osc = ctx.createOscillator();
+        let dst = osc.connect(ctx.createMediaStreamDestination());
+        let emptyAudioTrack = dst.stream.getAudioTracks()[0];
+        emptyAudioTrack.enabled = false;
+
+        let canvas = document.createElement('canvas');
+        let emptyVideoStream = canvas.captureStream();
+        emptyVideoStream.addTrack(emptyAudioTrack);
+
+        let call = peer.call(roomId, emptyVideoStream);
         
         call.on('stream', (remoteStream) => {
             let videoElem = document.getElementById('cam');
             videoElem.srcObject = remoteStream;
-            videoElem.muted = false;
+            videoElem.muted = false; // Prisilno uključivanje zvuka na gledatelju
             videoElem.volume = 1.0;
-            
+
             videoElem.play().then(() => {
                 btn.style.display = 'none';
             }).catch(() => {
-                btn.textContent = '▶ KLIKNI ZA REPRODUKCIJU ZVUKA';
+                btn.textContent = '▶ KLIKNI OPET ZA REPRODUKCIJU ZVUKA';
             });
         });
 
         setTimeout(() => {
-            if(btn.style.display !== 'none' && btn.textContent.includes('SPAJANJE')) {
-                btn.textContent = '⚠️ SPOJ NIJE USPIO - PROBAJ OPET KLIKNUTI';
+            if(btn.style.display !== 'none') {
+                btn.textContent = '❌ REFRESHAJ (ADMIN NIJE LIVE)';
             }
-        }, 6000);
+        }, 8000);
     });
 }
 
