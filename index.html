@@ -5,16 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>PUSH OUT BATTLE - ULTIMATE LIVE</title>
 
-<!-- PeerJS (Video) -->
+<!-- PeerJS & Firebase -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-<!-- Firebase (Podaci uživo) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,system-ui}
-body{background:#080a14;color:#fff;max-width:900px;margin:auto;min-height:100vh;padding-bottom:20px}
+body{background:#080a14;color:#fff;max-width:950px;margin:auto;min-height:100vh;padding-bottom:20px}
 #login{position:fixed;inset:0;background:#080a14;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
 #login h1{font-size:38px;font-weight:900;line-height:.9;text-align:center}
 .blue{color:#1a84ff}.orange{color:#ff8c00}
@@ -29,17 +27,15 @@ body{background:#080a14;color:#fff;max-width:900px;margin:auto;min-height:100vh;
 .top{text-align:center;padding:14px 0}
 .top h1{font-size:26px;font-weight:900}
 
-/* YouTube Style Grid Layout */
 .mainGrid{display:grid;grid-template-columns:1fr;gap:14px}
-@media(min-width: 768px){
-    .mainGrid{grid-template-columns: 1fr 320px;}
-}
+@media(min-width: 768px){ .mainGrid{grid-template-columns: 1fr 340px;} }
 
 .box{background:#000;border-radius:18px;overflow:hidden;position:relative;height:260px;border:1px solid #222}
 .tag{position:absolute;top:12px;padding:6px 12px;border-radius:99px;font-size:12px;font-weight:900;z-index:2}
 .t1{left:12px;background:#ff2a2a;color:#fff}
 .t2{right:12px;background:rgba(0,0,0,0.7);color:#fff;border:1px solid rgba(255,255,255,0.2)}
-.fullscreenBtn{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.6);border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;z-index:5}
+.videoBtns{position:absolute;bottom:12px;right:12px;display:flex;gap:6px;z-index:5}
+.videoBtns button{background:rgba(0,0,0,0.6);border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11px}
 
 video{width:100%;height:100%;object-fit:cover;background:#111}
 
@@ -47,40 +43,59 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 .floating-emoji{position:absolute;bottom:0;font-size:32px;animation:floatUp 2s linear forwards}
 @keyframes floatUp{0%{transform:translateY(0) scale(0.8);opacity:1}100%{transform:translateY(-220px) scale(1.4);opacity:0}}
 
+/* Timer & Runde Bar */
+.roundTimerBar{background:#131632;border-radius:12px;padding:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;border:1px solid #1f234a}
+.timerDisplay{font-size:22px;font-weight:900;color:#ff8c00}
+
+/* Scorebox */
+.scoreWrap{margin-top:10px;background:#131632;border-radius:18px;padding:16px;text-align:center;border:1px solid #1f234a}
+.names{display:flex;justify-content:space-between;font-weight:900;font-size:16px;margin-bottom:6px}
+.score{font-size:54px;font-weight:900;line-height:1}
+
+/* Poll Box */
+.pollWrap{background:#131632;border-radius:14px;padding:12px;margin-top:10px;border:1px solid #1f234a}
+.pollTitle{font-size:12px;color:#aaa;font-weight:bold;margin-bottom:8px;text-align:center}
+.pollBtns{display:flex;gap:8px;margin-bottom:8px}
+.pollBtns button{flex:1;padding:8px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;color:#fff}
+.pollBarContainer{background:#1c203d;height:12px;border-radius:6px;overflow:hidden;display:flex}
+.pollBarBlue{background:#1a84ff;height:100%;width:50%;transition:width 0.3s}
+.pollBarOrange{background:#ff7a00;height:100%;width:50%;transition:width 0.3s}
+
 /* Chat Layout */
-.chatWrap{background:#131632;border-radius:18px;border:1px solid #1f234a;display:flex;flex-direction:column;height:350px}
-@media(min-width: 768px){ .chatWrap{height: 100%; min-height:400px;} }
-.chatHeader{padding:10px 14px;border-bottom:1px solid #1f234a;font-weight:bold;font-size:13px;color:#aaa}
+.chatWrap{background:#131632;border-radius:18px;border:1px solid #1f234a;display:flex;flex-direction:column;height:420px}
+@media(min-width: 768px){ .chatWrap{height: 100%; min-height:480px;} }
+.chatHeader{padding:10px 14px;border-bottom:1px solid #1f234a;font-weight:bold;font-size:13px;color:#aaa;display:flex;justify-content:space-between}
+.pinnedMsg{background:#2a2f66;padding:8px 12px;font-size:12px;border-bottom:1px solid #1f234a;display:none;color:#ffca28}
 .chatMessages{flex:1;padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;font-size:13px}
 .chatMsg{background:#1c203d;padding:8px 10px;border-radius:10px;word-break:break-word;display:flex;justify-content:space-between;align-items:flex-start}
-.chatMsg .author{font-weight:bold;color:#1a84ff;margin-right:6px}
+.chatMsg .author{font-weight:bold;color:#1a84ff;margin-right:4px}
 .chatMsg .modAuthor{color:#ff8c00}
-.kickBtn{background:#e53e3e;border:none;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:6px}
+.vipBadge{background:#ff4444;color:#fff;font-size:9px;padding:2px 4px;border-radius:4px;margin-right:4px;font-weight:bold}
+.chatModBtns{display:flex;gap:4px}
+.modBtn{background:#e53e3e;border:none;color:#fff;padding:2px 5px;border-radius:4px;font-size:10px;cursor:pointer}
+.pinBtn{background:#ff8c00}
+
 .chatInputWrap{padding:10px;display:flex;gap:6px;border-top:1px solid #1f234a}
 .chatInputWrap input{flex:1;background:#1c203d;border:1px solid #2a2f66;color:#fff;padding:10px;border-radius:10px;outline:none}
 .chatInputWrap button{background:#1a84ff;border:none;color:#fff;padding:0 14px;border-radius:10px;font-weight:bold;cursor:pointer}
-
-.scoreWrap{margin-top:14px;background:#131632;border-radius:18px;padding:16px;text-align:center;border:1px solid #1f234a}
-.names{display:flex;justify-content:space-between;font-weight:900;font-size:16px;margin-bottom:6px}
-.score{font-size:58px;font-weight:900;line-height:1}
 
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0}
 .btns button{padding:12px;border:none;border-radius:12px;font-weight:900;font-size:13px;cursor:pointer;color:#fff}
 .bB{background:#1a84ff}.bO{background:#ff7a00}.bBMinus{background:#0d47a1}.bOMinus{background:#b75300}
 
-.main{width:100%;margin-bottom:8px;padding:14px;border:none;border-radius:14px;font-weight:900;font-size:14px;display:flex;justify-content:center;align-items:center;gap:6px;cursor:pointer;color:#fff}
+.main{width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;font-weight:900;font-size:13px;display:flex;justify-content:center;align-items:center;gap:6px;cursor:pointer;color:#fff}
 .live{background:#ff2d2d}.wa{background:#0cc144}.reset{background:#e53e3e}.sec{background:#2a2f66}
 .playBtn{background:#1a84ff;animation:pulse 1.5s infinite}
 @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
 
 .reactions{display:flex;justify-content:space-around;padding:10px;background:#131632;margin-top:10px;border-radius:14px;border:1px solid #1f234a}
-.reactions button{background:transparent;border:none;font-size:26px;cursor:pointer}
+.reactions button{background:transparent;border:none;font-size:24px;cursor:pointer}
 
 .inputsWrap{margin-top:10px;display:flex;gap:8px}
-.inputsWrap input{flex:1;background:#1c203d;border:1px solid #2a2f66;color:#fff;padding:10px;border-radius:10px;text-align:center;font-weight:bold;outline:none}
+.inputsWrap input{flex:1;background:#1c203d;border:1px solid #2a2f66;color:#fff;padding:8px;border-radius:10px;text-align:center;font-weight:bold;outline:none}
 
-.history{margin-top:14px;background:#131632;border-radius:14px;padding:12px;font-size:13px;border:1px solid #1f234a}
-.history h3{font-size:12px;color:#888;margin-bottom:6px;text-transform:uppercase}
+.history{margin-top:10px;background:#131632;border-radius:14px;padding:12px;font-size:13px;border:1px solid #1f234a}
+.history h3{font-size:11px;color:#888;margin-bottom:6px;text-transform:uppercase}
 .history ul{list-style:none;max-height:80px;overflow-y:auto}
 .history li{padding:4px 0;border-bottom:1px solid #1c203d;display:flex;justify-content:space-between}
 </style>
@@ -107,20 +122,40 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 <div class="top"><h1><span class="blue">PUSH OUT</span> <span class="orange">BATTLE</span></h1></div>
 
 <div class="mainGrid">
-    <!-- Lijevi dio (Video & Kontrole) -->
     <div>
         <div class="box" id="videoContainer">
             <div class="tag t1" id="statusTag">🔴 UŽIVO</div>
-            <div class="tag t2" id="viewerCount">👁️ 0 GLEDATELJA</div>
-            <button class="fullscreenBtn" onclick="toggleFullscreen()">🗖 POHRANI / UVEĆAJ</button>
+            <div class="tag t2" id="viewerCount">👁️ 0 ONLINE</div>
+            <div class="videoBtns">
+                <button onclick="toggleAudioOnly()" id="lowDataBtn">⚡ LOW-DATA</button>
+                <button onclick="toggleFullscreen()">🗖 FULLSCREEN</button>
+            </div>
             <div id="emojiLayer"></div>
             <video id="cam" autoplay playsinline></video>
+        </div>
+
+        <div class="roundTimerBar">
+            <div><b>RUNDA:</b> <span id="roundDisplay">1</span></div>
+            <div class="timerDisplay" id="timerDisplay">01:30</div>
+            <div><small id="matchLabel" style="color:#aaa">POB-XXXX</small></div>
         </div>
 
         <div class="scoreWrap">
             <div class="names"><span class="blue" id="p1Name">PLAVI</span><span class="orange" id="p2Name">NARANČASTI</span></div>
             <div class="score"><span id="s1">0</span> : <span id="s2">0</span></div>
-            <small id="matchLabel" style="color:#888;font-size:11px;margin-top:6px;display:block">BORBA U TIJEKU</small>
+        </div>
+
+        <!-- Anketa / Predikcije -->
+        <div class="pollWrap">
+            <div class="pollTitle">📊 ANKETA: TKO POBJEĐUJE?</div>
+            <div class="pollBtns">
+                <button class="bB" onclick="votePoll('blue')">PLAVI (<span id="pollPctB">50</span>%)</button>
+                <button class="bO" onclick="votePoll('orange')">NARANČASTI (<span id="pollPctO">50</span>%)</button>
+            </div>
+            <div class="pollBarContainer">
+                <div class="pollBarBlue" id="pollBarB"></div>
+                <div class="pollBarOrange" id="pollBarO"></div>
+            </div>
         </div>
 
         <div class="reactions">
@@ -130,6 +165,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
             <button onclick="sendReaction('💪')">💪</button>
         </div>
 
+        <!-- Admin Kontrole -->
         <div id="adminPanel">
             <div class="inputsWrap">
                 <input id="name1" placeholder="Ime Plavog" oninput="updateNames()">
@@ -141,10 +177,14 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
                 <button class="bBMinus" onclick="add('p', -1)">-1 PLAVI</button>
                 <button class="bOMinus" onclick="add('n', -1)">-1 NARANČASTI</button>
             </div>
+            <div class="btns">
+                <button class="sec" onclick="setRound(1)">RUNDA +1</button>
+                <button class="sec" onclick="toggleTimer()" id="timerBtn">▶ POKRENI ŠTOPERICU</button>
+            </div>
             <button class="main reset" onclick="resetMatch()">🔄 NOVA BORBA (RESET)</button>
             <button class="main live" id="lb" onclick="goLive()">📡 POKRENI KAMERU I SOBU</button>
             <button class="main sec" onclick="switchCamera()">🔄 PROMIJENI KAMERU</button>
-            <button class="main wa" onclick="share()">💬 PODIJELE PRIVATNI LINK NA WA</button>
+            <button class="main wa" onclick="share()">💬 PODIJELE LINK NA WA</button>
         </div>
 
         <div id="viewerPanel" style="display:none; margin-top:10px">
@@ -157,9 +197,13 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
         </div>
     </div>
 
-    <!-- Desni dio (CHAT UŽIVO) -->
+    <!-- Live Chat & Moderacija -->
     <div class="chatWrap">
-        <div class="chatHeader">💬 CHAT UŽIVO</div>
+        <div class="chatHeader">
+            <span>💬 CHAT UŽIVO</span>
+            <small id="chatStatus">Svi mogu pisati</small>
+        </div>
+        <div class="pinnedMsg" id="pinnedMsg">📌 <span></span></div>
         <div class="chatMessages" id="chatMsgs"></div>
         <div class="chatInputWrap">
             <input id="chatInput" placeholder="Napiši komentar..." onkeydown="if(event.key==='Enter')sendChat()">
@@ -190,14 +234,11 @@ let peer = null, localStream = null, roomId = "";
 let currentFacingMode = "environment";
 let myName = "";
 let myUserId = "u_" + Math.random().toString(36).substring(2, 9);
+let currentRound = 1, timerSeconds = 90, timerInterval = null, isTimerRunning = false;
+let reactionCount = 0, isMuted = false, isAudioOnly = false;
 
 const peerConfig = {
-    config: {
-        'iceServers': [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-    }
+    config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
 };
 
 function go(){
@@ -229,7 +270,7 @@ function go(){
 function openApp(){
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    document.getElementById('matchLabel').textContent = (isAdmin ? "KOD SOBE: " : "GLEDAŠ SOBU: ") + roomId;
+    document.getElementById('matchLabel').textContent = (isAdmin ? "KOD: " : "SOBA: ") + roomId;
     
     if(!isAdmin){
         document.getElementById('adminPanel').style.display = 'none';
@@ -239,14 +280,13 @@ function openApp(){
     listenToScore();
     trackPresence();
     listenToChat();
-    listenToKicks();
+    listenToModeration();
+    listenToPoll();
 }
 
 function trackPresence(){
     const myPresenceRef = db.ref('rooms/' + roomId + '/presence/' + myUserId);
-    const connectedRef = db.ref('.info/connected');
-
-    connectedRef.on('value', (snap) => {
+    db.ref('.info/connected').on('value', (snap) => {
         if (snap.val() === true) {
             myPresenceRef.onDisconnect().remove();
             myPresenceRef.set({ name: myName });
@@ -254,12 +294,12 @@ function trackPresence(){
     });
 
     db.ref('rooms/' + roomId + '/presence').on('value', (snap) => {
-        let count = snap.numChildren();
-        document.getElementById('viewerCount').textContent = `👁️ ${count} ONLINE`;
+        document.getElementById('viewerCount').textContent = `👁️ ${snap.numChildren()} ONLINE`;
     });
 }
 
 function sendChat(){
+    if(isMuted) return alert('Utišani ste od strane voditelja.');
     let input = document.getElementById('chatInput');
     let msg = input.value.trim();
     if(!msg) return;
@@ -268,7 +308,8 @@ function sendChat(){
         senderId: myUserId,
         name: myName,
         text: msg,
-        isMod: isAdmin
+        isMod: isAdmin,
+        isVip: reactionCount >= 10
     });
     input.value = '';
 }
@@ -277,39 +318,95 @@ function listenToChat(){
     db.ref('rooms/' + roomId + '/chat').on('child_added', (snap) => {
         let data = snap.val();
         let box = document.getElementById('chatMsgs');
-        
         let div = document.createElement('div');
         div.className = 'chatMsg';
         
         let authorClass = data.isMod ? 'author modAuthor' : 'author';
-        let kickBtnHTML = (isAdmin && !data.isMod) ? `<button class="kickBtn" onclick="kickUser('${data.senderId}', '${data.name}')">KICK</button>` : '';
+        let vipHTML = data.isVip ? `<span class="vipBadge">🔥 VIP</span>` : '';
+        
+        let modBtnsHTML = isAdmin ? `
+            <div class="chatModBtns">
+                <button class="modBtn pinBtn" onclick="pinMessage('${data.text}')">📌</button>
+                <button class="modBtn" onclick="muteUser('${data.senderId}')">🔇</button>
+                <button class="modBtn" onclick="kickUser('${data.senderId}')">❌</button>
+            </div>` : '';
 
         div.innerHTML = `
             <div>
+                ${vipHTML}
                 <span class="${authorClass}">${data.name}:</span>
                 <span>${data.text}</span>
             </div>
-            ${kickBtnHTML}
+            ${modBtnsHTML}
         `;
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
     });
-}
 
-function kickUser(targetUserId, targetName){
-    if(!isAdmin) return;
-    if(confirm(`Želite li izbaciti korisnika ${targetName}?`)){
-        db.ref('rooms/' + roomId + '/kicked/' + targetUserId).set(true);
-    }
-}
-
-function listenToKicks(){
-    db.ref('rooms/' + roomId + '/kicked/' + myUserId).on('value', (snap) => {
-        if(snap.val() === true){
-            alert('Izbačeni ste iz sobe od strane voditelja.');
-            location.reload();
-        }
+    db.ref('rooms/' + roomId + '/pinned').on('value', (snap) => {
+        let txt = snap.val();
+        let pinElem = document.getElementById('pinnedMsg');
+        if(txt){
+            pinElem.querySelector('span').textContent = txt;
+            pinElem.style.display = 'block';
+        } else { pinElem.style.display = 'none'; }
     });
+}
+
+function pinMessage(text){ db.ref('rooms/' + roomId + '/pinned').set(text); }
+function muteUser(uid){ db.ref('rooms/' + roomId + '/muted/' + uid).set(true); }
+function kickUser(uid){ db.ref('rooms/' + roomId + '/kicked/' + uid).set(true); }
+
+function listenToModeration(){
+    db.ref('rooms/' + roomId + '/kicked/' + myUserId).on('value', (snap) => {
+        if(snap.val() === true){ alert('Izbačeni ste iz sobe.'); location.reload(); }
+    });
+    db.ref('rooms/' + roomId + '/muted/' + myUserId).on('value', (snap) => {
+        if(snap.val() === true) isMuted = true;
+    });
+}
+
+function votePoll(team){
+    db.ref('rooms/' + roomId + '/poll/' + myUserId).set(team);
+}
+
+function listenToPoll(){
+    db.ref('rooms/' + roomId + '/poll').on('value', (snap) => {
+        let votes = snap.val() || {};
+        let total = 0, bVotes = 0, oVotes = 0;
+        for(let k in votes){
+            total++;
+            if(votes[k] === 'blue') bVotes++;
+            else if(votes[k] === 'orange') oVotes++;
+        }
+        let bPct = total ? Math.round((bVotes/total)*100) : 50;
+        let oPct = total ? (100 - bPct) : 50;
+
+        document.getElementById('pollPctB').textContent = bPct;
+        document.getElementById('pollPctO').textContent = oPct;
+        document.getElementById('pollBarB').style.width = bPct + '%';
+        document.getElementById('pollBarO').style.width = oPct + '%';
+    });
+}
+
+function toggleTimer(){
+    if(!isAdmin) return;
+    isTimerRunning = !isTimerRunning;
+    db.ref('rooms/' + roomId + '/timer/running').set(isTimerRunning);
+    document.getElementById('timerBtn').textContent = isTimerRunning ? "⏸ PAUZIRAJ ŠTOPERICU" : "▶ POKRENI ŠTOPERICU";
+}
+
+function setRound(val){
+    if(!isAdmin) return;
+    currentRound += val;
+    db.ref('rooms/' + roomId + '/round').set(currentRound);
+}
+
+function toggleAudioOnly(){
+    let vid = document.getElementById('cam');
+    isAudioOnly = !isAudioOnly;
+    vid.style.display = isAudioOnly ? 'none' : 'block';
+    document.getElementById('lowDataBtn').textContent = isAudioOnly ? "📺 VIDEO ON" : "⚡ LOW-DATA";
 }
 
 function toggleFullscreen(){
@@ -317,9 +414,7 @@ function toggleFullscreen(){
     if (!document.fullscreenElement) {
         if (elem.requestFullscreen) elem.requestFullscreen();
         else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-    } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-    }
+    } else { if (document.exitFullscreen) document.exitFullscreen(); }
 }
 
 function add(t, val){
@@ -329,20 +424,17 @@ function add(t, val){
     pushData();
 }
 
-function updateNames(){
-    if(!isAdmin) return;
-    pushData();
-}
+function updateNames(){ if(isAdmin) pushData(); }
 
 function resetMatch(){
     if(!isAdmin) return;
     let p1 = document.getElementById('name1').value || 'Plavi';
     let p2 = document.getElementById('name2').value || 'Narančasti';
-    
     if(b > o) recordHistory(p1, `${b}:${o}`);
     else if(o > b) recordHistory(p2, `${o}:${b}`);
 
-    b = 0; o = 0;
+    b = 0; o = 0; timerSeconds = 90; isTimerRunning = false;
+    db.ref('rooms/' + roomId + '/timer').set({ seconds: 90, running: false });
     pushData();
 }
 
@@ -360,14 +452,34 @@ function listenToScore(){
     db.ref('rooms/' + roomId + '/data').on('value', (snapshot) => {
         let data = snapshot.val();
         if(data){
-            b = data.blue || 0;
-            o = data.orange || 0;
+            b = data.blue || 0; o = data.orange || 0;
             document.getElementById('s1').textContent = b;
             document.getElementById('s2').textContent = o;
             document.getElementById('p1Name').textContent = data.p1 || 'PLAVI';
             document.getElementById('p2Name').textContent = data.p2 || 'NARANČASTI';
         }
     });
+
+    db.ref('rooms/' + roomId + '/round').on('value', (snap) => {
+        document.getElementById('roundDisplay').textContent = snap.val() || 1;
+    });
+
+    db.ref('rooms/' + roomId + '/timer').on('value', (snap) => {
+        let data = snap.val();
+        if(data){
+            timerSeconds = data.seconds;
+            let m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+            let s = (timerSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+        }
+    });
+
+    setInterval(() => {
+        if(isAdmin && isTimerRunning && timerSeconds > 0){
+            timerSeconds--;
+            db.ref('rooms/' + roomId + '/timer/seconds').set(timerSeconds);
+        }
+    }, 1000);
 
     db.ref('rooms/' + roomId + '/reactions').on('child_added', (snapshot) => {
         let emoji = snapshot.val();
@@ -387,6 +499,7 @@ function listenToScore(){
 }
 
 function sendReaction(emoji){
+    reactionCount++;
     db.ref('rooms/' + roomId + '/reactions').push(emoji);
 }
 
@@ -403,11 +516,7 @@ function showFloatingEmoji(emoji){
 async function goLive(){
     if(!isAdmin) return;
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: currentFacingMode }, 
-            audio: true
-        });
-        
+        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true });
         let videoElem = document.getElementById('cam');
         videoElem.srcObject = localStream;
         videoElem.muted = true;
@@ -415,7 +524,6 @@ async function goLive(){
         peer = new Peer(roomId, peerConfig);
         peer.on('open', () => document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO');
         peer.on('call', (call) => call.answer(localStream));
-
     } catch(e) { alert('Dozvoli pristup kameri/mikrofonu.'); }
 }
 
@@ -443,24 +551,16 @@ function connectToStream(){
         emptyVideoStream.addTrack(emptyAudioTrack);
 
         let call = peer.call(roomId, emptyVideoStream);
-        
         call.on('stream', (remoteStream) => {
             let videoElem = document.getElementById('cam');
             videoElem.srcObject = remoteStream;
             videoElem.muted = false;
             videoElem.volume = 1.0;
-
-            videoElem.play().then(() => {
-                btn.style.display = 'none';
-            }).catch(() => {
-                btn.textContent = '▶ KLIKNI OPET ZA REPRODUKCIJU ZVUKA';
-            });
+            videoElem.play().then(() => { btn.style.display = 'none'; }).catch(() => { btn.textContent = '▶ KLIKNI OPET ZA ZVUK'; });
         });
 
         setTimeout(() => {
-            if(btn.style.display !== 'none') {
-                btn.textContent = '❌ REFRESHAJ (ADMIN NIJE LIVE)';
-            }
+            if(btn.style.display !== 'none') btn.textContent = '❌ REFRESHAJ (ADMIN NIJE LIVE)';
         }, 8000);
     });
 }
