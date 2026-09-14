@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>PUSH OUT BATTLE - ULTR LIVE</title>
+<title>PUSH OUT BATTLE - REAL VAR EDITION</title>
 
 <!-- PeerJS & Firebase -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -59,6 +59,7 @@ body{background:var(--bg-color);color:var(--text-color);max-width:950px;margin:a
 .videoBtns button{background:rgba(0,0,0,0.6);border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11px}
 
 video{width:100%;height:100%;object-fit:cover;background:#111}
+#varPlayer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:8;display:none;background:#000}
 
 #emojiLayer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:10}
 .floating-emoji{position:absolute;bottom:0;font-size:32px;animation:floatUp 2s linear forwards}
@@ -109,6 +110,11 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 .playBtn{background:#1a84ff;animation:pulse 1.5s infinite}
 @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
 
+.varControlWrap{background:var(--card-bg);padding:10px;border-radius:12px;margin-bottom:8px;border:1px solid var(--border-color);display:flex;flex-direction:column;gap:8px}
+.varSelects{display:flex;gap:6px}
+.varSelects button{flex:1;padding:8px;background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-color);border-radius:8px;font-weight:bold;cursor:pointer}
+.varSelects button.active{background:#9c27b0;border-color:#ab47bc;color:#fff}
+
 .reactions{display:flex;justify-content:space-around;padding:10px;background:var(--card-bg);margin-top:10px;border-radius:14px;border:1px solid var(--border-color)}
 .reactions button{background:transparent;border:none;font-size:24px;cursor:pointer}
 
@@ -151,7 +157,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
     <div>
         <div class="box" id="videoContainer">
             <div class="tag t1" id="statusTag">🔴 UŽIVO</div>
-            <div class="varTag" id="varTag">📺 VAR PROVJERA</div>
+            <div class="varTag" id="varTag">📺 VAR PROVJERA U TIJEKU</div>
             <div class="tag t2" id="viewerCount">👁️ 0 ONLINE</div>
             <div class="videoBtns">
                 <button onclick="toggleAudioOnly()" id="lowDataBtn">⚡ LOW-DATA</button>
@@ -159,6 +165,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
             </div>
             <div id="emojiLayer"></div>
             <video id="cam" autoplay playsinline></video>
+            <video id="varPlayer" playsinline muted></video>
         </div>
 
         <div class="roundTimerBar">
@@ -203,8 +210,17 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
                 <button class="bOMinus" onclick="add('n', -1)">-1 NARANČASTI</button>
             </div>
 
-            <button class="main varBtn" onclick="triggerVAR()">📺 POKRENI VAR REPLAY (5 sek)</button>
-            
+            <!-- Pravi VAR Kontroler -->
+            <div class="varControlWrap">
+                <small style="color:#aaa; font-weight:bold">📺 PRAVI VAR (VRATI SNIMKU UNAZAD):</small>
+                <div class="varSelects">
+                    <button id="vSec3" onclick="selectVarSec(3)">-3 SEK</button>
+                    <button id="vSec5" class="active" onclick="selectVarSec(5)">-5 SEK</button>
+                    <button id="vSec10" onclick="selectVarSec(10)">-10 SEK</button>
+                </div>
+                <button class="main varBtn" style="margin:0" onclick="triggerRealVAR()">📺 POKRENI REPLAY ZA SVE</button>
+            </div>
+
             <div style="background:var(--card-bg); padding:10px; border-radius:12px; margin-bottom:8px; border:1px solid var(--border-color)">
                 <small style="color:#aaa; font-weight:bold">⏱️ POSTAVI VRIJEME ŠTOPERICE:</small>
                 <div class="timerCustomInputs">
@@ -279,7 +295,11 @@ let myName = "";
 let myUserId = "u_" + Math.random().toString(36).substring(2, 9);
 let currentRound = 1, timerSeconds = 90, isTimerRunning = false;
 let reactionCount = 0, isMuted = false, isAudioOnly = false;
-let mediaRecorder, recordedChunks = [];
+
+// Real VAR Buffer Variables
+let mediaRecorder = null;
+let recordedChunks = [];
+let selectedVarSec = 5;
 
 const peerConfig = {
     config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
@@ -327,7 +347,7 @@ function openApp(){
     listenToModeration();
     listenToPoll();
     listenToAnnouncements();
-    listenToVAR();
+    listenToRealVAR();
 }
 
 function toggleTheme(){ document.body.classList.toggle('light-mode'); }
@@ -346,26 +366,76 @@ function trackPresence(){
     });
 }
 
-function triggerVAR(){
-    if(!isAdmin) return;
-    db.ref('rooms/' + roomId + '/varState').set({ active: true, time: Date.now() });
-    setTimeout(() => {
-        db.ref('rooms/' + roomId + '/varState').set({ active: false, time: Date.now() });
-    }, 6000);
+function selectVarSec(sec){
+    selectedVarSec = sec;
+    document.getElementById('vSec3').classList.remove('active');
+    document.getElementById('vSec5').classList.remove('active');
+    document.getElementById('vSec10').classList.remove('active');
+    document.getElementById('vSec' + sec).classList.add('active');
 }
 
-function listenToVAR(){
-    db.ref('rooms/' + roomId + '/varState').on('value', (snap) => {
+function startVarBuffer(){
+    if(!localStream) return;
+    try {
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(localStream, { mimeType: 'video/webm' });
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+                recordedChunks.push(e.data);
+                if (recordedChunks.length > 30) recordedChunks.shift(); // keep max last ~15s
+            }
+        };
+        mediaRecorder.start(500); // chunk every 0.5s
+    } catch(e) { console.log('Buffer nije podržan na uređaju.'); }
+}
+
+function triggerRealVAR(){
+    if(!isAdmin || recordedChunks.length === 0) return alert('Spremnik videa se još puni... pričekajte sekundu.');
+    
+    // Pick chunks corresponding to selected seconds
+    let neededChunksCount = selectedVarSec * 2; 
+    let sliceChunks = recordedChunks.slice(-neededChunksCount);
+    let blob = new Blob(sliceChunks, { type: 'video/webm' });
+    
+    let reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = function() {
+        let base64data = reader.result;
+        db.ref('rooms/' + roomId + '/realVar').set({
+            active: true,
+            videoData: base64data,
+            duration: selectedVarSec,
+            time: Date.now()
+        });
+    }
+}
+
+function listenToRealVAR(){
+    db.ref('rooms/' + roomId + '/realVar').on('value', (snap) => {
         let val = snap.val();
         let varTag = document.getElementById('varTag');
-        let videoElem = document.getElementById('cam');
+        let varPlayer = document.getElementById('varPlayer');
+        let cam = document.getElementById('cam');
 
-        if(val && val.active){
+        if(val && val.active && val.videoData){
             varTag.style.display = 'block';
-            videoElem.playbackRate = 0.4;
+            varPlayer.style.display = 'block';
+            cam.style.opacity = '0';
+            
+            varPlayer.src = val.videoData;
+            varPlayer.playbackRate = 0.5; // Slow motion 0.5x
+            varPlayer.play();
+
+            varPlayer.onended = () => {
+                varTag.style.display = 'none';
+                varPlayer.style.display = 'none';
+                cam.style.opacity = '1';
+                if(isAdmin) db.ref('rooms/' + roomId + '/realVar/active').set(false);
+            };
         } else {
             varTag.style.display = 'none';
-            videoElem.playbackRate = 1.0;
+            varPlayer.style.display = 'none';
+            cam.style.opacity = '1';
         }
     });
 }
@@ -624,7 +694,10 @@ async function goLive(){
         videoElem.muted = true;
         
         peer = new Peer(roomId, peerConfig);
-        peer.on('open', () => document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO');
+        peer.on('open', () => {
+            document.getElementById('lb').textContent = '🔴 EMITIRAM UŽIVO';
+            startVarBuffer();
+        });
         peer.on('call', (call) => call.answer(localStream));
     } catch(e) { alert('Dozvoli pristup kameri/mikrofonu.'); }
 }
