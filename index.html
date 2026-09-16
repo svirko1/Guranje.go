@@ -109,7 +109,7 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
 .playBtn{background:#1a84ff;animation:pulse 1.5s infinite}
 @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
 
-.reactions{display:flex;justify-content:space-around;padding:10px;background:var(--card-bg);margin-top:10px;border-radius:14px;border:1px solid var(--border-color)}
+.reactions{display:flex;justify-around;padding:10px;background:var(--card-bg);margin-top:10px;border-radius:14px;border:1px solid var(--border-color)}
 .reactions button{background:transparent;border:none;font-size:24px;cursor:pointer}
 
 .inputsWrap{margin-top:10px;display:flex;gap:8px}
@@ -157,7 +157,8 @@ video{width:100%;height:100%;object-fit:cover;background:#111}
                 <button onclick="toggleFullscreen()">🗖 FULLSCREEN</button>
             </div>
             <div id="emojiLayer"></div>
-            <video id="cam" autoplay playsinline muted></video>
+            <!-- Ključni dodaci za mobilne preglednike: playsinline, webkit-playsinline -->
+            <video id="cam" autoplay playsinline webkit-playsinline muted></video>
         </div>
 
         <div class="roundTimerBar">
@@ -278,7 +279,7 @@ let currentRound = 1, timerSeconds = 90, isTimerRunning = false;
 let reactionCount = 0, isMuted = false, isAudioOnly = false;
 let customNames = {};
 
-// Dodani STUN i TURN poslužitelji za pouzdan rad preko različitih mreža i udaljenosti
+// Pouzdani STUN & TURN poslužitelji
 const peerConfig = {
     config: { 
         'iceServers': [
@@ -641,10 +642,21 @@ function showFloatingEmoji(emoji){
 async function goLive(){
     if(!isAdmin) return;
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true });
+        // Optimizirane postavke kamere (640x480, 30fps) - omogućuju lakši prijenos preko mobilne mreže
+        localStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: currentFacingMode,
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                frameRate: { ideal: 30, max: 30 }
+            }, 
+            audio: true 
+        });
+        
         let videoElem = document.getElementById('cam');
         videoElem.srcObject = localStream;
         videoElem.muted = true;
+        videoElem.play();
         
         peer = new Peer(roomId, peerConfig);
         peer.on('open', () => {
@@ -667,6 +679,7 @@ function connectToStream(){
 
     peer = new Peer(peerConfig);
     peer.on('open', () => {
+        // Stvaranje lažnog (praznog) stream-a za uspostavu dvosmjerne veze
         let ctx = new (window.AudioContext || window.webkitAudioContext)();
         let osc = ctx.createOscillator();
         let dst = osc.connect(ctx.createMediaStreamDestination());
@@ -681,13 +694,33 @@ function connectToStream(){
         call.on('stream', (remoteStream) => {
             let videoElem = document.getElementById('cam');
             videoElem.srcObject = remoteStream;
-            videoElem.muted = false;
-            videoElem.volume = 1.0;
-            videoElem.play().then(() => { btn.style.display = 'none'; }).catch(() => { btn.textContent = '▶ KLIKNI OPET ZA ZVUK'; });
+            
+            // Važno za mobilne preglednike: privremeno utišaj za siguran pokret prikaza
+            videoElem.muted = true;
+            
+            let playPromise = videoElem.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    // Video radi, sada odmutiraj zvuk
+                    videoElem.muted = false;
+                    videoElem.volume = 1.0;
+                    btn.style.display = 'none';
+                }).catch(error => {
+                    // Ako preglednik blokira, zatraži još jedan klik
+                    btn.textContent = '▶ KLIKNI ZA PRIKAZ VIDEA';
+                    btn.onclick = () => {
+                        videoElem.muted = false;
+                        videoElem.play();
+                        btn.style.display = 'none';
+                    };
+                });
+            }
         });
 
         setTimeout(() => {
-            if(btn.style.display !== 'none') btn.textContent = '❌ REFRESHAJ (ADMIN NIJE LIVE)';
+            if(btn.style.display !== 'none' && btn.textContent.includes('SPAJANJE')) {
+                btn.textContent = '❌ REFRESHAJ (ADMIN NIJE LIVE)';
+            }
         }, 12000);
     });
 }
